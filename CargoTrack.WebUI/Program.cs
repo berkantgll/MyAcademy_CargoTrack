@@ -1,12 +1,15 @@
 using CargoTrack.DataAccess.Context;
 using Microsoft.EntityFrameworkCore;
 using CargoTrack.Entity.Entities;
+using CargoTrack.DataAccess.Repositories.Concrete;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("CargoTrackConnection");
 
 builder.Services.AddDbContext<CargoTrackDbContext>(options => options.UseSqlServer(connectionString));
+
+builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
 
 builder.Services.AddIdentity<AppUser, AppRole>().AddEntityFrameworkStores<CargoTrackDbContext>();
 
