@@ -150,6 +150,7 @@ public class CargoTrackDbContext : IdentityDbContext<AppUser, AppRole, Guid>
         modelBuilder.Entity<Cargo>()
             .HasIndex(x => x.TrackingNumber)
             .IsUnique();
+            
 
     }
 }
