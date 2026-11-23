@@ -27,5 +27,6 @@ public class CargoDetailDto
     public string DeliveryDistrict { get; set; } = string.Empty;
     public string DeliveryNeighborhood { get; set; } = string.Empty;
     public string DeliveryFullAddress { get; set; } = string.Empty;
-    public string? DeliveryAddressDescription { get; set; } 
+    public string? DeliveryAddressDescription { get; set; }
+    public decimal TotalPrice { get; set; }
 }

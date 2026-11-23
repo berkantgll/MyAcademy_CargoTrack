@@ -35,8 +35,10 @@ public class CargoRepository : GenericRepository<Cargo>, ICargoRepository
             .Include(x => x.DeliveryAddress)
             .Include(x => x.CargoMovements)
             .Include(x => x.Delivery)
+            .Include(x => x.DeliveryExceptions)
             .FirstOrDefaultAsync(x => x.Id == cargoId);
     }
+
 
     public async Task<Cargo?> GetByTrackingNumberAsync(string trackingNumber)
     {

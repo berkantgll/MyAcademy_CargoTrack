@@ -28,6 +28,10 @@ public class CargoTrackDbContext : IdentityDbContext<AppUser, AppRole, Guid>
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<Cargo>()
+            .Property(x => x.TotalPrice)
+            .HasPrecision(18, 2);
+
+        modelBuilder.Entity<Cargo>()
            .Property(x => x.WeightKg)
            .HasPrecision(18, 3);
 
@@ -150,7 +154,7 @@ public class CargoTrackDbContext : IdentityDbContext<AppUser, AppRole, Guid>
         modelBuilder.Entity<Cargo>()
             .HasIndex(x => x.TrackingNumber)
             .IsUnique();
-            
+
 
     }
 }

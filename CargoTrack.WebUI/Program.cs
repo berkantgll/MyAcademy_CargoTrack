@@ -6,6 +6,9 @@ using CargoTrack.DataAccess.Repositories.Abstract;
 using CargoTrack.DataAccess.Repositories.Concrete;
 using CargoTrack.Entity.Entities;
 using Microsoft.EntityFrameworkCore;
+using CargoTrack.Business.Validators;
+using CargoTrack.DTO.CargoDtos;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +20,12 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
 
 builder.Services.AddScoped<ICargoService, CargoService>();
 builder.Services.AddScoped<ICargoRepository, CargoRepository>();
+builder.Services.AddScoped<ICargoPricingService, CargoPricingService>();
+builder.Services.AddScoped<IValidator<CreateCargoDto>, CreateCargoValidator>();
+builder.Services.AddScoped<IValidator<UpdateCargoDto>, UpdateCargoValidator>();
+builder.Services.AddScoped<ICargoPriceService, CargoPriceService>();
+builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
 
 builder.Services.AddIdentity<AppUser, AppRole>().AddEntityFrameworkStores<CargoTrackDbContext>();
 

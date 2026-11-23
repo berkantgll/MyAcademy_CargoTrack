@@ -16,5 +16,4 @@ public class CreateCargoDto
     public decimal WidthCm { get; set; }
     public decimal HeightCm { get; set; }
     public decimal LengthCm { get; set; }
-    public DateTime EstimatedDeliveryDate { get; set; }
 }

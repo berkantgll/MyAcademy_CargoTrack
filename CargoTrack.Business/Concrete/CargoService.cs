@@ -1,22 +1,38 @@
-﻿
-using CargoTrack.Business.Abstract;
+﻿using CargoTrack.Business.Abstract;
 using CargoTrack.DataAccess.Repositories.Abstract;
 using CargoTrack.DTO.CargoDtos;
 using CargoTrack.Entity.Entities;
 using CargoTrack.Entity.Enums;
 using Mapster;
 using System.Security.Cryptography;
+using FluentValidation;
 
 namespace CargoTrack.Business.Concrete;
 
 public class CargoService : ICargoService
 {
     private readonly ICargoRepository _cargoRepository;
+    private readonly ICargoPricingService _pricingService;
+    private readonly IRepository<Branch> _branchRepository;
 
-    public CargoService(ICargoRepository cargoRepository)
+    private readonly IValidator<CreateCargoDto> _createValidator;
+    private readonly IValidator<UpdateCargoDto> _updateValidator;
+
+    public CargoService(
+        ICargoRepository cargoRepository,
+        ICargoPricingService pricingService,
+        IRepository<Branch> branchRepository,
+        IValidator<CreateCargoDto> createValidator,
+        IValidator<UpdateCargoDto> updateValidator)
     {
         _cargoRepository = cargoRepository;
+        _pricingService = pricingService;
+        _branchRepository = branchRepository;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
     }
+
+
 
     // Hangi kargo durumundan hangisine geçilebilir?
     private bool IsAllowedTransition(CargoStatus current, CargoStatus next)
@@ -186,9 +202,31 @@ public class CargoService : ICargoService
     }
 
     // Yeni kargo oluştur
+
     public async Task<Guid> CreateCargoAsync(CreateCargoDto dto)
     {
+        await _createValidator.ValidateAndThrowAsync(dto);
         var now = DateTime.UtcNow;
+
+        var origin = await _branchRepository.GetByIdAsync(dto.OriginBranchId);
+        var destination = await _branchRepository.GetByIdAsync(dto.DestinationBranchId);
+
+        if (origin == null || destination == null ||
+            !origin.IsActive || !destination.IsActive)
+        {
+            throw new InvalidOperationException(
+                "Geçerli ve aktif şubeler seçilmelidir.");
+        }
+
+        bool sameCity = string.Equals(
+            origin.BranchCity.Trim(),
+            destination.BranchCity.Trim(),
+            StringComparison.OrdinalIgnoreCase);
+
+        // Şimdilik örnek SLA süreleri
+        int deliveryDays = dto.Type == DeliveryType.Urgent
+            ? 1
+            : sameCity ? 2 : 4;
 
         var cargo = new Cargo
         {
@@ -197,27 +235,48 @@ public class CargoService : ICargoService
             OriginBranchId = dto.OriginBranchId,
             DestinationBranchId = dto.DestinationBranchId,
             DeliveryAddressId = dto.DeliveryAddressId,
-
             Type = dto.Type,
             ExtraServices = dto.ExtraServices,
             IsFragile = dto.IsFragile,
-
             WeightKg = dto.WeightKg,
             WidthCm = dto.WidthCm,
             HeightCm = dto.HeightCm,
             LengthCm = dto.LengthCm,
-
-            EstimatedDeliveryDate = dto.EstimatedDeliveryDate,
+            EstimatedDeliveryDate = now.Date.AddDays(deliveryDays),
             Status = CargoStatus.Created,
             CreatedDate = now
         };
 
+        // Fiyatı otomatik hesapla
+        cargo.TotalPrice = await _pricingService
+            .CalculatePriceAsync(cargo);
+
         // Takip numarası üret
-        int number = RandomNumberGenerator.GetInt32(100000, 1000000);
+        const int maxAttempts = 10;
+        bool uniqueNumberFound = false;
 
-        cargo.TrackingNumber = $"MYC-{now.Year}-{number}";
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            int number = RandomNumberGenerator.GetInt32(100000, 1000000);
+            string trackingNumber = $"MYC-{now.Year}-{number}";
 
-        // İlk hareket kaydını ekle
+            var existing = await _cargoRepository
+                .GetByTrackingNumberAsync(trackingNumber);
+
+            if (existing == null)
+            {
+                cargo.TrackingNumber = trackingNumber;
+                uniqueNumberFound = true;
+                break;
+            }
+        }
+
+        if (!uniqueNumberFound)
+        {
+            throw new InvalidOperationException(
+                "Benzersiz takip numarası üretilemedi.");
+        }
+
         cargo.CargoMovements.Add(new CargoMovement
         {
             CargoId = cargo.Id,
@@ -229,15 +288,17 @@ public class CargoService : ICargoService
         });
 
         _cargoRepository.Add(cargo);
-
         await _cargoRepository.SaveChangesAsync();
 
         return cargo.Id;
     }
 
+
     // Kargo güncelle
+
     public async Task<bool> UpdateCargoAsync(UpdateCargoDto dto)
     {
+        await _updateValidator.ValidateAndThrowAsync(dto);
         var cargo = await _cargoRepository.GetByIdAsync(dto.CargoId);
 
         if (cargo == null)
@@ -255,12 +316,17 @@ public class CargoService : ICargoService
         cargo.Type = dto.Type;
         cargo.ExtraServices = dto.ExtraServices;
         cargo.IsFragile = dto.IsFragile;
+
+        // Değişen bilgilere göre fiyatı tekrar hesapla
+        cargo.TotalPrice = await _pricingService.CalculatePriceAsync(cargo);
+
         cargo.UpdatedDate = DateTime.UtcNow;
 
         await _cargoRepository.SaveChangesAsync();
 
         return true;
     }
+
 
     // Kargo sil (Soft Delete)
     public async Task<bool> DeleteCargoAsync(Guid cargoId)

@@ -306,6 +306,10 @@ namespace CargoTrack.DataAccess.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("TotalPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("TrackingNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");

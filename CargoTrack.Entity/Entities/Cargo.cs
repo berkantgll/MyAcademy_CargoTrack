@@ -20,6 +20,7 @@ public class Cargo :BaseEntity
 
     public  DateTime EstimatedDeliveryDate {  get; set; }
     public decimal WeightKg { get; set; }
+    public decimal TotalPrice { get; set; }
     public decimal WidthCm { get; set; }
     public decimal HeightCm { get; set; }
     public decimal LengthCm { get; set; }
