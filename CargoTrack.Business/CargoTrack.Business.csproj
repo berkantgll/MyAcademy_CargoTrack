@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Mapster" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\CargoTrack.DataAccess\CargoTrack.DataAccess.csproj" />
     <ProjectReference Include="..\CargoTrack.DTO\CargoTrack.DTO.csproj" />
   </ItemGroup>

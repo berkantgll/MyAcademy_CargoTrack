@@ -1,9 +1,11 @@
-using CargoTrack.DataAccess.Context;
-using Microsoft.EntityFrameworkCore;
-using CargoTrack.Entity.Entities;
-using CargoTrack.DataAccess.Repositories.Concrete;
 using CargoTrack.Business.Abstract;
 using CargoTrack.Business.Concrete;
+using CargoTrack.Business.Mappings;
+using CargoTrack.DataAccess.Context;
+using CargoTrack.DataAccess.Repositories.Abstract;
+using CargoTrack.DataAccess.Repositories.Concrete;
+using CargoTrack.Entity.Entities;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,11 +16,13 @@ builder.Services.AddDbContext<CargoTrackDbContext>(options => options.UseSqlServ
 builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
 
 builder.Services.AddScoped<ICargoService, CargoService>();
+builder.Services.AddScoped<ICargoRepository, CargoRepository>();
 
 builder.Services.AddIdentity<AppUser, AppRole>().AddEntityFrameworkStores<CargoTrackDbContext>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+CargoMappingConfig.Register();
 
 var app = builder.Build();
 
