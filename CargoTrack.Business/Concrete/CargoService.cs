@@ -6,6 +6,7 @@ using CargoTrack.Entity.Enums;
 using Mapster;
 using System.Security.Cryptography;
 using FluentValidation;
+using System.Text.Json;
 
 namespace CargoTrack.Business.Concrete;
 
@@ -14,6 +15,7 @@ public class CargoService : ICargoService
     private readonly ICargoRepository _cargoRepository;
     private readonly ICargoPricingService _pricingService;
     private readonly IRepository<Branch> _branchRepository;
+    private readonly IRepository<AuditLog> _auditRepository;
 
     private readonly IValidator<CreateCargoDto> _createValidator;
     private readonly IValidator<UpdateCargoDto> _updateValidator;
@@ -22,14 +24,40 @@ public class CargoService : ICargoService
         ICargoRepository cargoRepository,
         ICargoPricingService pricingService,
         IRepository<Branch> branchRepository,
+        IRepository<AuditLog> auditRepository,
         IValidator<CreateCargoDto> createValidator,
         IValidator<UpdateCargoDto> updateValidator)
     {
         _cargoRepository = cargoRepository;
         _pricingService = pricingService;
         _branchRepository = branchRepository;
+        _auditRepository = auditRepository;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
+    }
+
+    private void AddAudit(
+        Cargo cargo,
+        string actionType,
+        string description,
+        string? oldValues = null,
+        string? newValues = null)
+    {
+        var now = DateTime.UtcNow;
+
+        var log = new AuditLog
+        {
+            EntityName = nameof(Cargo),
+            EntityId = cargo.Id,
+            ActionType = actionType,
+            ActionDate = now,
+            CreatedDate = now,
+            Description = description,
+            OldValues = oldValues,
+            NewValues = newValues
+        };
+
+        _auditRepository.Add(log);
     }
 
 
@@ -196,6 +224,13 @@ public class CargoService : ICargoService
             }
         }
 
+        AddAudit(
+               cargo,
+              "StatusChanged",
+               description,
+               oldStatus.ToString(),
+               cargo.Status.ToString());
+
         await _cargoRepository.SaveChangesAsync();
 
         return true;
@@ -288,6 +323,14 @@ public class CargoService : ICargoService
         });
 
         _cargoRepository.Add(cargo);
+
+        AddAudit(
+    cargo,
+    "Created",
+    $"Kargo oluşturuldu: {cargo.TrackingNumber}",
+    null,
+    cargo.Status.ToString());
+
         await _cargoRepository.SaveChangesAsync();
 
         return cargo.Id;
@@ -303,6 +346,15 @@ public class CargoService : ICargoService
 
         if (cargo == null)
             return false;
+
+        var oldValues = JsonSerializer.Serialize(new
+        {
+            cargo.WeightKg,
+            cargo.WidthCm,
+            cargo.HeightCm,
+            cargo.LengthCm,
+            cargo.TotalPrice
+        });
 
         cargo.WeightKg = dto.WeightKg;
         cargo.WidthCm = dto.WidthCm;
@@ -321,6 +373,22 @@ public class CargoService : ICargoService
         cargo.TotalPrice = await _pricingService.CalculatePriceAsync(cargo);
 
         cargo.UpdatedDate = DateTime.UtcNow;
+
+        var newValues = JsonSerializer.Serialize(new
+        {
+            cargo.WeightKg,
+            cargo.WidthCm,
+            cargo.HeightCm,
+            cargo.LengthCm,
+            cargo.TotalPrice 
+        });
+
+        AddAudit(
+            cargo,
+            "Updated",
+            "Kargo bilgileri güncellendi.",
+            oldValues,
+            newValues);
 
         await _cargoRepository.SaveChangesAsync();
 
@@ -341,6 +409,13 @@ public class CargoService : ICargoService
         _cargoRepository.Delete(cargo);
 
         await _cargoRepository.SaveChangesAsync();
+
+        AddAudit(
+    cargo,
+    "Deleted",
+    "Kargo soft delete ile silindi.",
+    "IsDeleted = false",
+    "IsDeleted = true");
 
         return true;
     }

@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using CargoTrack.Business.Validators;
 using CargoTrack.DTO.CargoDtos;
 using FluentValidation;
+using CargoTrack.WebUI.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,10 @@ builder.Services.AddScoped<IValidator<UpdateCargoDto>, UpdateCargoValidator>();
 builder.Services.AddScoped<ICargoPriceService, CargoPriceService>();
 builder.Services.AddScoped<IBranchService, BranchService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IAddressService, AddressService>();
+builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<ITransferCenterService, TransferCenterService>();
+builder.Services.AddScoped<IDeliveryService, DeliveryService>();
 
 builder.Services.AddIdentity<AppUser, AppRole>().AddEntityFrameworkStores<CargoTrackDbContext>();
 
@@ -34,6 +39,8 @@ builder.Services.AddControllersWithViews();
 CargoMappingConfig.Register();
 
 var app = builder.Build();
+
+await RoleSeeder.SeedAsync(app.Services);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
