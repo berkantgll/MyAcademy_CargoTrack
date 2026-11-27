@@ -1,0 +1,100 @@
+﻿@model CargoTrack.DTO.CargoDtos.CargoTrackingDto
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Kargo Takibi";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1" />
+    <title>Kargo Takibi - CargoTrack</title>
+
+    <style>
+            body {
+                font-family: Arial, sans-serif;
+                background: #f3f5fa;
+                padding: 25px;
+                color: #14253d;
+            }
+
+            main {
+                max-width: 750px;
+                margin: auto;
+                background: white;
+                padding: 25px;
+                border-radius: 10px;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            th, td {
+                padding: 12px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }
+    </style>
+</head>
+
+<body>
+    <main>
+        <h1>CargoTrack</h1>
+        <h2>Kargo Takip Sonucu</h2>
+
+        <p>
+            <strong>Takip Numarası:</strong>
+            @Model.TrackingNumber
+        </p>
+
+        <p>
+            <strong>Güncel Durum:</strong>
+            @Model.Status
+        </p>
+
+        <p>
+            <strong>Çıkış Şubesi:</strong>
+            @Model.OriginBranchName
+        </p>
+
+        <p>
+            <strong>Varış Şubesi:</strong>
+            @Model.DestinationBranchName
+        </p>
+
+        <h3>Kargo Hareketleri</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Durum</th>
+                    <th>Tarih</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var movement in Model.CargoMovements
+                    .OrderByDescending(x => x.MovementDate))
+                {
+                    <tr>
+                        <td>@movement.Status</td>
+                        <td>
+                            @(movement.MovementDate
+                                .AddHours(3)
+                                .ToString("dd.MM.yyyy HH:mm"))
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <p>
+            <a href="/Tracking">Başka Kargo Sorgula</a>
+        </p>
+    </main>
+</body>
+</html>

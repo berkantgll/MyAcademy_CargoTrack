@@ -1,0 +1,107 @@
+﻿@using CargoTrack.Entity.Enums
+@model CargoTrack.DTO.CargoDtos.ChangeCargoStatusDto
+
+@{
+    ViewData["Title"] = "Kargo Durumu";
+
+    var employees =
+        ViewBag.Employees as List<CargoTrack.DTO.EmployeeDtos.EmployeeDto>
+        ?? new List<CargoTrack.DTO.EmployeeDtos.EmployeeDto>();
+}
+
+<div class="container py-4">
+
+    <h2>Kargo Durumunu Değiştir</h2>
+
+    <p>
+        <strong>Takip Numarası:</strong>
+        @ViewBag.TrackingNumber
+    </p>
+
+    <p>
+        <strong>Mevcut Durum:</strong>
+        @ViewBag.CurrentStatus
+    </p>
+
+    <div asp-validation-summary="All"
+         class="text-danger"></div>
+
+    <form asp-controller="AdminCargos"
+          asp-action="Status"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        <input asp-for="CargoId" type="hidden" />
+
+        <div class="mb-3">
+            <label>Yeni Durum</label>
+
+            <select asp-for="NewStatus"
+                    asp-items="Html.GetEnumSelectList<CargoStatus>()"
+                    class="form-select">
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label>Açıklama</label>
+
+            <textarea asp-for="Description"
+                      class="form-control"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label>İşlemi Yapan Çalışan</label>
+
+            <select asp-for="EmployeeId"
+                    class="form-select">
+
+                <option value="">Çalışan seçiniz</option>
+
+                @foreach (var employee in employees.Where(x => x.IsActive))
+                {
+                    <option value="@employee.Id">
+                        @employee.FullName
+                    </option>
+                }
+            </select>
+        </div>
+
+        <hr />
+
+        <h4>Teslimat Doğrulaması</h4>
+
+        <p class="text-muted">
+            Bu iki alan yalnızca Delivered durumuna
+            geçerken doldurulmalıdır.
+        </p>
+
+        <div class="mb-3">
+            <label>6 Haneli Teslimat Kodu</label>
+
+            <input asp-for="VerificationCode"
+                   maxlength="6"
+                   inputmode="numeric"
+                   autocomplete="off"
+                   class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label>Teslim Alan Kişi</label>
+
+            <input asp-for="ReceivedName"
+                   class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Durumu Güncelle
+        </button>
+
+        <a asp-controller="Dashboard"
+           asp-action="Index"
+           class="btn btn-secondary">
+            Geri Dön
+        </a>
+
+    </form>
+</div>

@@ -1,0 +1,148 @@
+﻿@model CargoTrack.DTO.CargoDtos.UserCargoDetailDto
+
+@{
+    ViewData["Title"] = "Kargo Detayım";
+}
+
+<div class="container py-4">
+
+    <h2>Kargo Detayım</h2>
+
+    <!-- KARGO BİLGİLERİ -->
+    <div class="card mb-4">
+        <div class="card-body">
+
+            <h4>@Model.TrackingNumber</h4>
+
+            <p>
+                <strong>Durum:</strong>
+                @Model.Status
+            </p>
+
+            <p>
+                <strong>Çıkış Şubesi:</strong>
+                @Model.OriginBranchName
+            </p>
+
+            <p>
+                <strong>Varış Şubesi:</strong>
+                @Model.DestinationBranchName
+            </p>
+
+            <p>
+                <strong>Gönderi Tarihi:</strong>
+                @(Model.CreatedDate.ToLocalTime().ToString("dd.MM.yyyy"))
+            </p>
+
+            <p>
+                <strong>Tahmini Teslimat:</strong>
+                @(Model.EstimatedDeliveryDate.ToLocalTime().ToString("dd.MM.yyyy"))
+            </p>
+
+            @if (Model.DeliveredAt.HasValue)
+            {
+                <p>
+                    <strong>Teslim Edildi:</strong>
+                    @(Model.DeliveredAt.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
+                </p>
+            }
+
+        </div>
+    </div>
+
+    <!-- KARGO HAREKET GEÇMİŞİ -->
+    <h3>Kargo Hareketleri</h3>
+
+    @if (Model.Movements == null || !Model.Movements.Any())
+    {
+        <div class="alert alert-info">
+            Henüz hareket kaydı bulunmuyor.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Durum</th>
+                        <th>Tarih</th>
+                        <th>Açıklama</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var movement in Model.Movements)
+                    {
+                        <tr>
+                            <td>
+                                @movement.Status
+                            </td>
+
+                            <td>
+                                @(movement.MovementDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
+                            </td>
+
+                            <td>
+                                @movement.Description
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <!-- QR KOD BÖLÜMÜ -->
+    <div style="margin-top:30px;
+        padding:25px;
+        background:white;
+        border:1px solid #ddd;
+        border-radius:10px;
+        text-align:center;">
+
+        <h3>QR Kod ile Kargo Takibi</h3>
+
+        <p>
+            Takip Numarası:
+            <strong>@Model.TrackingNumber</strong>
+        </p>
+
+        <img src="@Url.Action(
+                    "Image",
+                    "CargoQr",
+                    new { trackingNumber = Model.TrackingNumber })"
+             alt="Kargo Takip QR Kodu"
+             width="180"
+             height="180"
+             style="display:block; margin:20px auto;" />
+
+        <p>
+            QR kodu okutarak kargonuzun
+            güncel durumunu görüntüleyebilirsiniz.
+        </p>
+
+        <a href="@Url.Action(
+                    "Result",
+                    "CargoQr",
+                    new { trackingNumber = Model.TrackingNumber })"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="btn btn-primary">
+            Takip Sayfasını Aç
+        </a>
+
+    </div>
+
+    <!-- GERİ DÖN -->
+    <div style="margin-top:25px;">
+
+        <a asp-controller="UserCargos"
+           asp-action="Index"
+           class="btn btn-secondary">
+            Kargolarıma Dön
+        </a>
+
+    </div>
+
+</div>

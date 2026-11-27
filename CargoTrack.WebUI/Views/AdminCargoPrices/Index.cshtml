@@ -1,0 +1,142 @@
+﻿@model List<CargoTrack.DTO.CargoPriceDtos.CargoPriceDto>
+
+@{
+    ViewData["Title"] = "Fiyat Tarifeleri";
+}
+
+<div class="container py-4">
+
+    <h2>Fiyat Tarifesi Yönetimi</h2>
+    <p>Kargo ücretlerini güzergâh ve gönderi tipine göre tanımlayın.</p>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+
+    <h4>Yeni Fiyat Tarifesi</h4>
+
+    <form asp-controller="AdminCargoPrices"
+          asp-action="Create"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <label class="form-label">Çıkış Şehri</label>
+                <input name="OriginCity"
+                       class="form-control"
+                       placeholder="İstanbul"
+                       required />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Varış Şehri</label>
+                <input name="DestinationCity"
+                       class="form-control"
+                       placeholder="Ankara"
+                       required />
+            </div>
+
+            <div class="col-md-12">
+                <label class="form-label">Gönderi Tipi</label>
+                <select name="Type" class="form-select">
+                    <option value="1">Standart</option>
+                    <option value="2">Acil</option>
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Başlangıç Fiyatı (TL)</label>
+                <input name="BasePrice"
+                       type="number" min="0" step="0.01"
+                       class="form-control" required />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">
+                    Kg / Desi Başına Ücret (TL)
+                </label>
+                <input name="PricePerUnit"
+                       type="number" min="0.01" step="0.01"
+                       class="form-control" required />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Özel Paketleme (TL)</label>
+                <input name="SpecialPackagingFee"
+                       type="number" min="0" step="0.01"
+                       value="0" class="form-control" />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Hediye Paketi (TL)</label>
+                <input name="GiftWrappingFee"
+                       type="number" min="0" step="0.01"
+                       value="0" class="form-control" />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Sigorta (TL)</label>
+                <input name="InsuranceFee"
+                       type="number" min="0" step="0.01"
+                       value="0" class="form-control" />
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    Fiyat Tarifesi Ekle
+                </button>
+            </div>
+
+        </div>
+    </form>
+
+    <hr />
+
+    <h4>Kayıtlı Fiyat Tarifeleri</h4>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Çıkış</th>
+                <th>Varış</th>
+                <th>Tip</th>
+                <th>Başlangıç</th>
+                <th>Birim Ücret</th>
+                <th>Durum</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var price in Model)
+            {
+                <tr>
+                    <td>@price.OriginCity</td>
+                    <td>@price.DestinationCity</td>
+                    <td>@price.Type</td>
+                    <td>@price.BasePrice.ToString("N2") TL</td>
+                    <td>@price.PricePerUnit.ToString("N2") TL</td>
+                    <td>@(price.IsActive ? "Aktif" : "Pasif")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <a asp-controller="AdminCargos"
+       asp-action="Create"
+       class="btn btn-secondary">
+        Kargo Oluşturma Ekranına Dön
+    </a>
+
+</div>

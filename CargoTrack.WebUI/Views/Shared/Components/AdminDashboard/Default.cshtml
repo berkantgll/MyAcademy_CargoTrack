@@ -1,0 +1,238 @@
+﻿@model CargoTrack.DTO.ReportDtos.AdminReportDto
+
+@{
+    var maxDaily = Math.Max(
+        1,
+        Model.Last7Days.Select(x => x.Count)
+            .DefaultIfEmpty(0).Max());
+}
+
+<style>
+    .dashboard-stats {
+        margin: 28px 0;
+    }
+
+    .dashboard-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+        margin-bottom: 24px;
+    }
+
+    .dashboard-stat-card {
+        background: white;
+        border: 1px solid #e2e6ed;
+        border-radius: 10px;
+        padding: 20px;
+    }
+
+    .dashboard-stat-label {
+        color: #64748b;
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+
+    .dashboard-stat-value {
+        font-size: 27px;
+        font-weight: bold;
+        color: #14253d;
+    }
+
+    .dashboard-report-box {
+        background: white;
+        border: 1px solid #e2e6ed;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 18px;
+    }
+
+    .dashboard-bar-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 14px 0;
+    }
+
+    .dashboard-bar-label {
+        min-width: 80px;
+        font-size: 13px;
+    }
+
+    .dashboard-bar-track {
+        flex: 1;
+        height: 16px;
+        background: #eaf0f8;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+
+    .dashboard-bar-fill {
+        height: 100%;
+        background: #ff9100;
+        border-radius: 5px;
+    }
+
+    .dashboard-bar-count {
+        min-width: 25px;
+        text-align: right;
+        font-weight: bold;
+    }
+</style>
+
+<section class="dashboard-stats">
+
+    <h2>Operasyon Özeti</h2>
+
+    <div class="dashboard-stats-grid">
+
+        <div class="dashboard-stat-card">
+            <div class="dashboard-stat-label">Toplam Kargo</div>
+            <div class="dashboard-stat-value">
+                @Model.TotalCargos
+            </div>
+        </div>
+
+        <div class="dashboard-stat-card">
+            <div class="dashboard-stat-label">Aktif Kargo</div>
+            <div class="dashboard-stat-value">
+                @Model.ActiveCargos
+            </div>
+        </div>
+
+        <div class="dashboard-stat-card">
+            <div class="dashboard-stat-label">Geciken Kargo</div>
+            <div class="dashboard-stat-value">
+                @Model.DelayedCargos
+            </div>
+        </div>
+
+        <div class="dashboard-stat-card">
+            <div class="dashboard-stat-label">Teslim Edilen</div>
+            <div class="dashboard-stat-value">
+                @Model.DeliveredCargos
+            </div>
+        </div>
+
+        <div class="dashboard-stat-card">
+            <div class="dashboard-stat-label">Teslimat Oranı</div>
+            <div class="dashboard-stat-value">
+                @(Model.DeliveryRate.ToString("N1"))%
+            </div>
+        </div>
+
+        <div class="dashboard-stat-card">
+            <div class="dashboard-stat-label">İade Oranı</div>
+            <div class="dashboard-stat-value">
+                @(Model.ReturnRate.ToString("N1"))%
+            </div>
+        </div>
+
+        <div class="dashboard-stat-card">
+            <div class="dashboard-stat-label">Aktif Şube</div>
+            <div class="dashboard-stat-value">
+                @Model.ActiveBranches
+            </div>
+        </div>
+
+        <div class="dashboard-stat-card">
+            <div class="dashboard-stat-label">Aktif Personel</div>
+            <div class="dashboard-stat-value">
+                @Model.ActiveEmployees
+            </div>
+        </div>
+
+    </div>
+
+    <div class="dashboard-report-box">
+
+        <h3>Son 7 Günlük Kargo Trafiği</h3>
+
+        @foreach (var day in Model.Last7Days)
+        {
+            var barWidth = day.Count * 100.0 / maxDaily;
+
+            <div class="dashboard-bar-row">
+
+                <span class="dashboard-bar-label">
+                    @(day.Date.ToString("dd.MM.yyyy"))
+                </span>
+
+                <div class="dashboard-bar-track">
+                    <div class="dashboard-bar-fill"
+                         style="width:@(barWidth)%">
+                    </div>
+                </div>
+
+                <span class="dashboard-bar-count">
+                    @day.Count
+                </span>
+
+            </div>
+        }
+
+    </div>
+
+    <div class="dashboard-report-box">
+
+        <h3>En Çok Kargo Gönderen 5 Şube</h3>
+
+        @if (!Model.TopSendingBranches.Any())
+        {
+            <p>Henüz veri bulunmuyor.</p>
+        }
+        else
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>Şube</th>
+                        <th>Kargo Sayısı</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var branch in Model.TopSendingBranches)
+                    {
+                        <tr>
+                            <td>@branch.BranchName</td>
+                            <td>@branch.Count</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+    </div>
+
+    <div class="dashboard-report-box">
+
+        <h3>Kargo Durum Dağılımı</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Durum</th>
+                    <th>Adet</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var item in Model.StatusDistribution)
+                {
+                    <tr>
+                        <td>@item.Status</td>
+                        <td>@item.Count</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+    </div>
+
+    <a asp-controller="AdminReports"
+       asp-action="Index"
+       class="create-link">
+        Tüm Operasyon Raporları
+    </a>
+
+</section>

@@ -1,0 +1,84 @@
+﻿@model List<CargoTrack.DTO.BranchDtos.BranchDto>
+
+@{
+    ViewData["Title"] = "Şube Yönetimi";
+}
+
+<h2>Şube Yönetimi</h2>
+
+@if (TempData["Success"] != null)
+{
+    <p style="color:green">@TempData["Success"]</p>
+}
+
+@if (TempData["Error"] != null)
+{
+    <p style="color:red">@TempData["Error"]</p>
+}
+
+<h3>Yeni Şube Oluştur</h3>
+
+<form asp-controller="AdminBranches"
+      asp-action="Create"
+      method="post">
+
+    @Html.AntiForgeryToken()
+
+    <div>
+        <label>Şube Kodu</label>
+        <input name="BranchCode" required
+               placeholder="KDK001" />
+    </div>
+
+    <div>
+        <label>Şube Adı</label>
+        <input name="BranchName" required
+               placeholder="Kadıköy Şubesi" />
+    </div>
+
+    <div>
+        <label>Şehir</label>
+        <input name="BranchCity" required
+               placeholder="İstanbul" />
+    </div>
+
+    <div>
+        <label>Telefon</label>
+        <input name="PhoneNumber"
+               placeholder="0216 000 00 00" />
+    </div>
+
+    <button type="submit">Şube Ekle</button>
+</form>
+
+<hr />
+
+<h3>Kayıtlı Şubeler</h3>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Kod</th>
+            <th>Şube</th>
+            <th>Şehir</th>
+            <th>Durum</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var branch in Model)
+        {
+            <tr>
+                <td>@branch.BranchCode</td>
+                <td>@branch.BranchName</td>
+                <td>@branch.BranchCity</td>
+                <td>
+                    @(branch.IsActive ? "Aktif" : "Pasif")
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-controller="AdminUsers" asp-action="Index">
+    Kullanıcı Yönetimine Dön
+</a>

@@ -1,0 +1,100 @@
+﻿@model List<CargoTrack.DTO.AddressDtos.AddressDto>
+
+@{
+    ViewData["Title"] = "Adres Yönetimi";
+}
+
+<div class="container py-4">
+    <h2>Adres Yönetimi</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+
+    <h4>Yeni Teslimat Adresi</h4>
+
+    <form asp-controller="AdminAddresses"
+          asp-action="Create"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        <div class="mb-3">
+            <label>Ülke</label>
+            <input name="Country"
+                   class="form-control"
+                   value="Türkiye" required />
+        </div>
+
+        <div class="mb-3">
+            <label>Şehir</label>
+            <input name="City"
+                   class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label>İlçe</label>
+            <input name="District"
+                   class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label>Mahalle</label>
+            <input name="Neighborhood"
+                   class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label>Açık Adres</label>
+            <textarea name="FullAddress"
+                      class="form-control"
+                      required></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label>Adres Tarifi</label>
+            <input name="AddressDescription"
+                   class="form-control" />
+        </div>
+
+        <button class="btn btn-primary" type="submit">
+            Adres Ekle
+        </button>
+    </form>
+
+    <hr />
+
+    <h4>Kayıtlı Adresler</h4>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Şehir</th>
+                <th>İlçe</th>
+                <th>Mahalle</th>
+                <th>Açık Adres</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var address in Model)
+            {
+                <tr>
+                    <td>@address.City</td>
+                    <td>@address.District</td>
+                    <td>@address.Neighborhood</td>
+                    <td>@address.FullAddress</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

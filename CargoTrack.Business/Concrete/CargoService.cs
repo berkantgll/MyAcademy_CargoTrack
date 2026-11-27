@@ -16,9 +16,13 @@ public class CargoService : ICargoService
     private readonly ICargoPricingService _pricingService;
     private readonly IRepository<Branch> _branchRepository;
     private readonly IRepository<AuditLog> _auditRepository;
-
     private readonly IValidator<CreateCargoDto> _createValidator;
     private readonly IValidator<UpdateCargoDto> _updateValidator;
+    private readonly IValidator<ChangeCargoStatusDto> _statusValidator;
+    private readonly ICargoSearchRepository _cargoSearchRepository;
+    private readonly IRepository<Employee> _employeeRepository;
+    private readonly ICurrentUserContext _currentUserContext;
+
 
     public CargoService(
         ICargoRepository cargoRepository,
@@ -26,7 +30,11 @@ public class CargoService : ICargoService
         IRepository<Branch> branchRepository,
         IRepository<AuditLog> auditRepository,
         IValidator<CreateCargoDto> createValidator,
-        IValidator<UpdateCargoDto> updateValidator)
+        IValidator<UpdateCargoDto> updateValidator,
+        ICargoSearchRepository cargoSearchRepository,
+        IRepository<Employee> employeeRepository,
+        ICurrentUserContext currentUserContext,
+        IValidator<ChangeCargoStatusDto> statusValidator)
     {
         _cargoRepository = cargoRepository;
         _pricingService = pricingService;
@@ -34,6 +42,10 @@ public class CargoService : ICargoService
         _auditRepository = auditRepository;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
+        _cargoSearchRepository = cargoSearchRepository;
+        _employeeRepository = employeeRepository;
+        _currentUserContext = currentUserContext;
+        _statusValidator = statusValidator;
     }
 
     private void AddAudit(
@@ -54,12 +66,12 @@ public class CargoService : ICargoService
             CreatedDate = now,
             Description = description,
             OldValues = oldValues,
-            NewValues = newValues
+            NewValues = newValues,
+            PerformedBy = _currentUserContext.UserName
         };
 
         _auditRepository.Add(log);
     }
-
 
 
     // Hangi kargo durumundan hangisine geçilebilir?
@@ -99,6 +111,12 @@ public class CargoService : ICargoService
     // Kargo durumunu değiştir
     public async Task<bool> ChangeCargoStatusAsync(ChangeCargoStatusDto dto)
     {
+
+        var validationResult = await _statusValidator.ValidateAsync(dto);
+
+        if (!validationResult.IsValid)
+            return false;
+
         var cargo = await _cargoRepository
             .GetByIdWithDetailsAsync(dto.CargoId);
 
@@ -347,6 +365,9 @@ public class CargoService : ICargoService
         if (cargo == null)
             return false;
 
+        if (cargo.Status != CargoStatus.Created)
+            return false;
+
         var oldValues = JsonSerializer.Serialize(new
         {
             cargo.WeightKg,
@@ -380,7 +401,7 @@ public class CargoService : ICargoService
             cargo.WidthCm,
             cargo.HeightCm,
             cargo.LengthCm,
-            cargo.TotalPrice 
+            cargo.TotalPrice
         });
 
         AddAudit(
@@ -396,7 +417,6 @@ public class CargoService : ICargoService
     }
 
 
-    // Kargo sil (Soft Delete)
     public async Task<bool> DeleteCargoAsync(Guid cargoId)
     {
         var cargo = await _cargoRepository.GetByIdAsync(cargoId);
@@ -404,21 +424,25 @@ public class CargoService : ICargoService
         if (cargo == null)
             return false;
 
+        if (cargo.Status != CargoStatus.Created)
+            return false;
+
         cargo.UpdatedDate = DateTime.UtcNow;
 
         _cargoRepository.Delete(cargo);
 
-        await _cargoRepository.SaveChangesAsync();
-
         AddAudit(
-    cargo,
-    "Deleted",
-    "Kargo soft delete ile silindi.",
-    "IsDeleted = false",
-    "IsDeleted = true");
+            cargo,
+            "Deleted",
+            $"Kargo silindi: {cargo.TrackingNumber}",
+            "IsDeleted=false",
+            "IsDeleted=true");
+
+        await _cargoRepository.SaveChangesAsync();
 
         return true;
     }
+
 
     // Kargo var mı?
     public async Task<bool> ExistsCargoAsync(Guid cargoId)
@@ -479,4 +503,234 @@ public class CargoService : ICargoService
 
         return dto;
     }
+
+    public async Task<List<CargoListDto>> GetByCustomerIdAsync(
+        Guid customerId)
+    {
+        var cargos = await _cargoRepository
+            .GetByCustomerIdWithDetailsAsync(customerId);
+
+        return cargos.Adapt<List<CargoListDto>>();
+    }
+
+    public async Task<List<CargoListDto>> GetByBranchIdAsync(
+        Guid branchId)
+    {
+        var cargos = await _cargoRepository
+            .GetByBranchIdWithDetailsAsync(branchId);
+
+        return cargos.Adapt<List<CargoListDto>>();
+    }
+
+    public async Task<CargoAdminDetailDto?> GetAdminCargoDetailsAsync(
+        Guid cargoId)
+    {
+        var cargo = await _cargoRepository
+            .GetByIdWithDetailsAsync(cargoId);
+
+        if (cargo == null)
+            return null;
+
+        return new CargoAdminDetailDto
+        {
+            Id = cargo.Id,
+            TrackingNumber = cargo.TrackingNumber,
+            Status = cargo.Status,
+            OriginBranchName = cargo.OriginBranch.BranchName,
+            DestinationBranchName = cargo.DestinationBranch.BranchName,
+            TotalPrice = cargo.TotalPrice,
+            CreatedDate = cargo.CreatedDate,
+            EstimatedDeliveryDate = cargo.EstimatedDeliveryDate,
+
+            Movements = cargo.CargoMovements
+                .OrderByDescending(x => x.MovementDate)
+                .Select(x => new CargoAdminMovementDto
+                {
+                    OldStatus = x.OldStatus,
+                    NewStatus = x.NewStatus,
+                    MovementDate = x.MovementDate,
+                    Description = x.Description ?? string.Empty
+                })
+                .ToList()
+        };
+    }
+
+    public async Task<UpdateCargoDto?> GetCargoForEditAsync(Guid cargoId)
+    {
+        var cargo = await _cargoRepository.GetByIdAsync(cargoId);
+
+        if (cargo == null)
+            return null;
+
+        return new UpdateCargoDto
+        {
+            CargoId = cargo.Id,
+            OriginBranchId = cargo.OriginBranchId,
+            DestinationBranchId = cargo.DestinationBranchId,
+            DeliveryAddressId = cargo.DeliveryAddressId,
+            Type = cargo.Type,
+            ExtraServices = cargo.ExtraServices,
+            IsFragile = cargo.IsFragile,
+            WeightKg = cargo.WeightKg,
+            WidthCm = cargo.WidthCm,
+            LengthCm = cargo.LengthCm,
+            HeightCm = cargo.HeightCm
+        };
+    }
+
+
+    public async Task<(List<CargoListDto> Items, int TotalCount)>
+        SearchCargosAsync(
+            string? search,
+            CargoStatus? status,
+            Guid? branchId,
+            int page,
+            int pageSize)
+    {
+        var result = await _cargoSearchRepository.SearchAsync(
+            search, status, branchId, page, pageSize);
+
+        var items = result.Items.Adapt<List<CargoListDto>>();
+
+        return (items, result.TotalCount);
+    }
+
+
+    public async Task<CargoAdminDetailDto?> GetManagerCargoAsync(
+        Guid branchId,
+        Guid cargoId)
+    {
+        if (branchId == Guid.Empty || cargoId == Guid.Empty)
+            return null;
+
+        var cargo = await _cargoRepository
+            .GetByIdWithDetailsAsync(cargoId);
+
+        if (cargo == null)
+            return null;
+
+        bool belongsToBranch =
+            cargo.OriginBranchId == branchId ||
+            cargo.DestinationBranchId == branchId;
+
+        if (!belongsToBranch)
+            return null;
+
+        return await GetAdminCargoDetailsAsync(cargoId);
+    }
+
+    public async Task<bool> ChangeCargoStatusForBranchAsync(
+        Guid branchId,
+        ChangeCargoStatusDto dto)
+    {
+        if (branchId == Guid.Empty || dto.CargoId == Guid.Empty)
+            return false;
+
+        var cargo = await _cargoRepository
+            .GetByIdWithDetailsAsync(dto.CargoId);
+
+        if (cargo == null)
+            return false;
+
+        bool isOrigin = cargo.OriginBranchId == branchId;
+        bool isDestination = cargo.DestinationBranchId == branchId;
+
+        bool allowed = (cargo.Status, dto.NewStatus) switch
+        {
+            (CargoStatus.Created,
+             CargoStatus.AtOriginBranch) => isOrigin,
+
+            (CargoStatus.AtOriginBranch,
+             CargoStatus.AtTransferCenter) => isOrigin,
+
+            (CargoStatus.AtTransferCenter,
+             CargoStatus.AtDestinationBranch) => isDestination,
+
+            (CargoStatus.AtDestinationBranch,
+             CargoStatus.OutForDelivery) => isDestination,
+
+            (CargoStatus.OutForDelivery,
+             CargoStatus.Delivered) => isDestination,
+
+            (CargoStatus.OutForDelivery,
+             CargoStatus.DeliveryFailed) => isDestination,
+
+            (CargoStatus.DeliveryFailed,
+             CargoStatus.OutForDelivery) => isDestination,
+
+            (CargoStatus.ReturnInProgress,
+             CargoStatus.ReturnedToSender) => isOrigin,
+
+            _ => false
+        };
+
+        if (!allowed)
+            return false;
+
+        // Çalışan seçildiyse aynı şubeden olmalı.
+        if (dto.EmployeeId.HasValue)
+        {
+            var employee = await _employeeRepository
+                .GetByIdAsync(dto.EmployeeId.Value);
+
+            if (employee == null ||
+                !employee.IsActive ||
+                employee.BranchId != branchId)
+            {
+                return false;
+            }
+        }
+
+        // Kullanıcının gönderdiği BranchId'ye güvenmiyoruz.
+        dto.BranchId = branchId;
+        dto.TransferCenterId = null;
+
+        return await ChangeCargoStatusAsync(dto);
+    }
+
+    public async Task<UserCargoDetailDto?> GetUserCargoDetailsAsync(
+        Guid customerId,
+        Guid cargoId)
+    {
+        if (customerId == Guid.Empty || cargoId == Guid.Empty)
+            return null;
+
+        var cargo = await _cargoRepository
+            .GetByIdWithDetailsAsync(cargoId);
+
+        if (cargo == null || cargo.IsDeleted)
+            return null;
+
+        bool isOwner =
+            cargo.SenderId == customerId ||
+            cargo.ReceiverId == customerId;
+
+        if (!isOwner)
+            return null;
+
+        return new UserCargoDetailDto
+        {
+            Id = cargo.Id,
+            TrackingNumber = cargo.TrackingNumber,
+            Status = cargo.Status,
+
+            OriginBranchName = cargo.OriginBranch.BranchName,
+            DestinationBranchName = cargo.DestinationBranch.BranchName,
+
+            CreatedDate = cargo.CreatedDate,
+            EstimatedDeliveryDate = cargo.EstimatedDeliveryDate,
+            DeliveredAt = cargo.DeliveredAt,
+
+            Movements = cargo.CargoMovements
+                .OrderByDescending(x => x.MovementDate)
+                .Select(x => new UserCargoMovementDto
+                {
+                    Status = x.NewStatus,
+                    MovementDate = x.MovementDate,
+                    Description = x.Description ?? string.Empty
+                })
+                .ToList()
+        };
+    }
+
 }

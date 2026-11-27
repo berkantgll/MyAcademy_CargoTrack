@@ -1,0 +1,95 @@
+﻿@using CargoTrack.Entity.Enums
+@using CargoTrack.DTO.EmployeeDtos
+@model CargoTrack.DTO.CargoDtos.ChangeCargoStatusDto
+
+@{
+    ViewData["Title"] = "Şube Kargo İşlemi";
+
+    var employees =
+        ViewBag.Employees as List<EmployeeDto>
+        ?? new List<EmployeeDto>();
+}
+
+<div class="container py-4">
+
+    <h2>Şube Kargo İşlemi</h2>
+
+    <p>
+        <strong>Takip No:</strong>
+        @ViewBag.TrackingNumber
+    </p>
+
+    <p>
+        <strong>Mevcut Durum:</strong>
+        @ViewBag.CurrentStatus
+    </p>
+
+    <form asp-action="Status" method="post">
+
+        @Html.AntiForgeryToken()
+
+        <input asp-for="CargoId" type="hidden" />
+
+        <div asp-validation-summary="All"
+             class="text-danger"></div>
+
+        <div class="mb-3">
+            <label>Yeni Durum</label>
+
+            <select asp-for="NewStatus"
+                    asp-items="Html.GetEnumSelectList<CargoStatus>()"
+                    class="form-select">
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label>Açıklama</label>
+
+            <textarea asp-for="Description"
+                      class="form-control"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label>İşlemi Yapan Çalışan</label>
+
+            <select asp-for="EmployeeId"
+                    class="form-select">
+
+                <option value="">Çalışan seçiniz</option>
+
+                @foreach (var employee in employees)
+                {
+                    <option value="@employee.Id">
+                        @employee.FullName
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label>Teslimat Kodu</label>
+
+            <input asp-for="VerificationCode"
+                   maxlength="6"
+                   inputmode="numeric"
+                   autocomplete="off"
+                   class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label>Teslim Alan Kişi</label>
+
+            <input asp-for="ReceivedName"
+                   class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Durumu Güncelle
+        </button>
+
+        <a asp-action="Index" class="btn btn-secondary">
+            Geri Dön
+        </a>
+
+    </form>
+</div>

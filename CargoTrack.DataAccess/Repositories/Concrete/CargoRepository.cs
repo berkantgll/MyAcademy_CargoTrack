@@ -52,5 +52,38 @@ public class CargoRepository : GenericRepository<Cargo>, ICargoRepository
                 x.TrackingNumber == trackingNumber);
     }
 
+    public async Task<List<Cargo>> GetByCustomerIdWithDetailsAsync(
+        Guid customerId)
+    {
+        return await _context.Set<Cargo>()
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted &&
+                (x.SenderId == customerId ||
+                 x.ReceiverId == customerId))
+            .Include(x => x.Sender)
+            .Include(x => x.Receiver)
+            .Include(x => x.OriginBranch)
+            .Include(x => x.DestinationBranch)
+            .OrderByDescending(x => x.CreatedDate)
+            .ToListAsync();
+    }
+
+    public async Task<List<Cargo>> GetByBranchIdWithDetailsAsync(
+        Guid branchId)
+    {
+        return await _context.Set<Cargo>()
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted &&
+                (x.OriginBranchId == branchId ||
+                 x.DestinationBranchId == branchId))
+            .Include(x => x.Sender)
+            .Include(x => x.Receiver)
+            .Include(x => x.OriginBranch)
+            .Include(x => x.DestinationBranch)
+            .OrderByDescending(x => x.CreatedDate)
+            .ToListAsync();
+    }
+
+
 
 }

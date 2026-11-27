@@ -1,0 +1,158 @@
+﻿@using CargoTrack.Entity.Enums
+@model CargoTrack.DTO.CargoDtos.CargoAdminDetailDto
+
+@{
+    ViewData["Title"] = "Kargo Detayı";
+
+    bool isCompleted =
+        Model.Status == CargoStatus.Delivered ||
+        Model.Status == CargoStatus.ReturnedToSender;
+}
+
+<div class="container py-4">
+
+    <h2>Kargo Detayı</h2>
+
+    <!-- KARGO BİLGİLERİ -->
+    <div class="card mb-4">
+        <div class="card-body">
+
+            <h4>@Model.TrackingNumber</h4>
+
+            <p>
+                <strong>Durum:</strong>
+                @Model.Status
+            </p>
+
+            <p>
+                <strong>Çıkış Şubesi:</strong>
+                @Model.OriginBranchName
+            </p>
+
+            <p>
+                <strong>Varış Şubesi:</strong>
+                @Model.DestinationBranchName
+            </p>
+
+            <p>
+                <strong>Toplam Ücret:</strong>
+                @(Model.TotalPrice.ToString("N2")) TL
+            </p>
+
+            <p>
+                <strong>Oluşturulma:</strong>
+                @(Model.CreatedDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
+            </p>
+
+            <p>
+                <strong>Tahmini Teslimat:</strong>
+                @(Model.EstimatedDeliveryDate.ToLocalTime().ToString("dd.MM.yyyy"))
+            </p>
+
+            @if (!isCompleted)
+            {
+                <a asp-controller="AdminCargos"
+                   asp-action="Status"
+                   asp-route-id="@Model.Id"
+                   class="btn btn-primary">
+                    Durumu Değiştir
+                </a>
+            }
+
+            <a asp-controller="Dashboard"
+               asp-action="Index"
+               class="btn btn-secondary">
+                Geri Dön
+            </a>
+
+        </div>
+    </div>
+
+    <!-- KARGO HAREKET GEÇMİŞİ -->
+    <h3>Hareket Geçmişi</h3>
+
+    @if (Model.Movements == null || !Model.Movements.Any())
+    {
+        <div class="alert alert-info">
+            Henüz hareket kaydı bulunmuyor.
+        </div>
+    }
+    else
+    {
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Önceki Durum</th>
+                    <th>Yeni Durum</th>
+                    <th>Tarih</th>
+                    <th>Açıklama</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var movement in Model.Movements)
+                {
+                    <tr>
+                        <td>
+                            @(movement.OldStatus?.ToString() ?? "-")
+                        </td>
+
+                        <td>
+                            @movement.NewStatus
+                        </td>
+
+                        <td>
+                            @(movement.MovementDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
+                        </td>
+
+                        <td>
+                            @movement.Description
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <!-- QR KOD BÖLÜMÜ -->
+    <div style="margin-top:30px;
+        padding:25px;
+        background:white;
+        border:1px solid #ddd;
+        border-radius:10px;
+        text-align:center;">
+
+        <h3>QR Kod ile Kargo Takibi</h3>
+
+        <p>
+            Takip Numarası:
+            <strong>@Model.TrackingNumber</strong>
+        </p>
+
+        <img src="@Url.Action(
+                    "Image",
+                    "CargoQr",
+                    new { trackingNumber = Model.TrackingNumber })"
+             alt="Kargo Takip QR Kodu"
+             width="180"
+             height="180"
+             style="display:block; margin:20px auto;" />
+
+        <p>
+            QR kodu telefonunuzla okutarak
+            kargonun güncel durumunu takip edebilirsiniz.
+        </p>
+
+        <a href="@Url.Action(
+                    "Result",
+                    "CargoQr",
+                    new { trackingNumber = Model.TrackingNumber })"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="btn btn-primary">
+            Takip Sayfasını Aç
+        </a>
+
+    </div>
+
+</div>

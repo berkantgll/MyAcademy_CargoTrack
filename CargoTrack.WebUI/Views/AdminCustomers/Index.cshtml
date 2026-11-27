@@ -1,0 +1,97 @@
+﻿@model List<CargoTrack.DTO.CustomerDtos.CustomerDto>
+
+@{
+    ViewData["Title"] = "Müşteri Yönetimi";
+}
+
+<div class="container py-4">
+    <h2>Müşteri Yönetimi</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+
+    <h4>Yeni Müşteri Oluştur</h4>
+
+    <form asp-controller="AdminCustomers"
+          asp-action="Create"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        <div class="mb-3">
+            <label>Ad</label>
+            <input name="FirstName"
+                   class="form-control"
+                   required />
+        </div>
+
+        <div class="mb-3">
+            <label>Soyad</label>
+            <input name="LastName"
+                   class="form-control"
+                   required />
+        </div>
+
+        <div class="mb-3">
+            <label>Telefon</label>
+            <input name="PhoneNumber"
+                   class="form-control"
+                   required />
+        </div>
+
+        <div class="mb-3">
+            <label>E-posta</label>
+            <input name="Email"
+                   type="email"
+                   class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Müşteri Ekle
+        </button>
+    </form>
+
+    <hr />
+
+    <h4>Kayıtlı Müşteriler</h4>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Ad</th>
+                <th>Soyad</th>
+                <th>Telefon</th>
+                <th>E-posta</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var customer in Model)
+            {
+                <tr>
+                    <td>@customer.FirstName</td>
+                    <td>@customer.LastName</td>
+                    <td>@customer.PhoneNumber</td>
+                    <td>@customer.Email</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <a asp-controller="AdminCargos"
+       asp-action="Create"
+       class="btn btn-secondary">
+        Kargo Oluşturma Ekranına Dön
+    </a>
+</div>

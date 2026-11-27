@@ -1,8 +1,11 @@
-﻿using CargoTrack.Business.Abstract;
+﻿
+using CargoTrack.Business.Abstract;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CargoTrack.WebUI.Controllers;
 
+[Authorize(Roles = "Admin")]
 public class CargoController : Controller
 {
     private readonly ICargoService _cargoService;
@@ -14,7 +17,8 @@ public class CargoController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var cargo = await _cargoService.GetAllCargoAsync();
-        return View(cargo);
+        var cargos = await _cargoService.GetAllCargoAsync();
+
+        return View(cargos);
     }
 }

@@ -1,0 +1,170 @@
+﻿@model CargoTrack.DTO.DashboardDtos.ManagerDashboardDto
+
+<style>
+    .manager-summary {
+        margin: 26px 0;
+    }
+
+        .manager-summary h2 {
+            margin-bottom: 16px;
+        }
+
+    .manager-stat-grid {
+        display: grid;
+        grid-template-columns: repeat( auto-fit, minmax(170px, 1fr));
+        gap: 14px;
+        margin-bottom: 24px;
+    }
+
+    .manager-stat-card {
+        padding: 19px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+    }
+
+    .manager-stat-label {
+        color: #64748b;
+        font-size: 13px;
+        margin-bottom: 9px;
+    }
+
+    .manager-stat-value {
+        color: #1e293b;
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+    .manager-movements {
+        padding: 18px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        overflow-x: auto;
+    }
+
+        .manager-movements table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .manager-movements th,
+        .manager-movements td {
+            padding: 11px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+</style>
+
+<section class="manager-summary">
+
+    <h2>@Model.BranchName — Operasyon Özeti</h2>
+
+    <div class="manager-stat-grid">
+
+        <div class="manager-stat-card">
+            <div class="manager-stat-label">
+                Şubeyle İlişkili Kargolar
+            </div>
+            <div class="manager-stat-value">
+                @Model.TotalCargos
+            </div>
+        </div>
+
+        <div class="manager-stat-card">
+            <div class="manager-stat-label">
+                Bugün Gelen
+            </div>
+            <div class="manager-stat-value">
+                @Model.TodayIncoming
+            </div>
+        </div>
+
+        <div class="manager-stat-card">
+            <div class="manager-stat-label">
+                Bugün Çıkan
+            </div>
+            <div class="manager-stat-value">
+                @Model.TodayOutgoing
+            </div>
+        </div>
+
+        <div class="manager-stat-card">
+            <div class="manager-stat-label">
+                Dağıtımdaki Kargolar
+            </div>
+            <div class="manager-stat-value">
+                @Model.OutForDelivery
+            </div>
+        </div>
+
+        <div class="manager-stat-card">
+            <div class="manager-stat-label">
+                Bugün Teslim Edilen
+            </div>
+            <div class="manager-stat-value">
+                @Model.DeliveredToday
+            </div>
+        </div>
+
+        <div class="manager-stat-card">
+            <div class="manager-stat-label">
+                Geciken Kargolar
+            </div>
+            <div class="manager-stat-value">
+                @Model.DelayedCargos
+            </div>
+        </div>
+
+        <div class="manager-stat-card">
+            <div class="manager-stat-label">
+                Sorunlu Kargolar
+            </div>
+            <div class="manager-stat-value">
+                @Model.ProblematicCargos
+            </div>
+        </div>
+
+    </div>
+
+    <div class="manager-movements">
+
+        <h3>Son Kargo Hareketleri</h3>
+
+        @if (!Model.RecentMovements.Any())
+        {
+            <p>Henüz hareket kaydı bulunmuyor.</p>
+        }
+        else
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>Takip Numarası</th>
+                        <th>Yeni Durum</th>
+                        <th>Tarih</th>
+                        <th>Açıklama</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var movement in Model.RecentMovements)
+                    {
+                        <tr>
+                            <td>@movement.TrackingNumber</td>
+                            <td>@movement.Status</td>
+                            <td>
+                                @(movement.MovementDate
+                                    .AddHours(3)
+                                    .ToString("dd.MM.yyyy HH:mm"))
+                            </td>
+                            <td>@movement.Description</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+    </div>
+
+</section>

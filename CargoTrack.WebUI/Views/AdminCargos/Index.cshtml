@@ -1,0 +1,140 @@
+﻿@using CargoTrack.Entity.Enums
+@model CargoTrack.WebUI.Models.AdminCargoSearchVm
+
+@{
+    ViewData["Title"] = "Kargo Yönetimi";
+}
+
+<div class="container py-4">
+
+    <h2>Kargo Yönetimi</h2>
+
+    <form asp-controller="AdminCargos"
+          asp-action="Index"
+          method="get"
+          class="row g-3 mb-4">
+
+        <div class="col-md-4">
+            <label>Takip Numarası</label>
+
+            <input type="text"
+                   name="search"
+                   value="@Model.Search"
+                   class="form-control"
+                   placeholder="MYC-2026-..." />
+        </div>
+
+        <div class="col-md-3">
+            <label>Durum</label>
+
+            <select name="status" class="form-select">
+                <option value="">Tüm Durumlar</option>
+
+                @foreach (var status in Enum.GetValues<CargoStatus>())
+                {
+                    <option value="@status"
+                            selected="@(Model.Status == status)">
+                        @status
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label>Şube</label>
+
+            <select name="branchId"
+                    asp-items="Model.Branches"
+                    class="form-select">
+                <option value="">Tüm Şubeler</option>
+            </select>
+        </div>
+
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">
+                Ara
+            </button>
+        </div>
+
+    </form>
+
+    <p>
+        <strong>Toplam kayıt:</strong> @Model.TotalCount
+    </p>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Takip Numarası</th>
+                <th>Durum</th>
+                <th>Çıkış</th>
+                <th>Varış</th>
+                <th>İşlem</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var cargo in Model.Items)
+            {
+                <tr>
+                    <td>@cargo.TrackingNumber</td>
+                    <td>@cargo.Status</td>
+                    <td>@cargo.OriginBranchName</td>
+                    <td>@cargo.DestinationBranchName</td>
+                    <td>
+                        <a asp-action="Details"
+                           asp-route-id="@cargo.Id">
+                            Detay
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (!Model.Items.Any())
+    {
+        <p>Aradığınız kriterlere uygun kargo bulunamadı.</p>
+    }
+
+    @if (Model.TotalPages > 1)
+    {
+        <div class="d-flex gap-3 align-items-center">
+
+            @if (Model.Page > 1)
+            {
+                <a asp-action="Index"
+                   asp-route-search="@Model.Search"
+                   asp-route-status="@Model.Status"
+                   asp-route-branchId="@Model.BranchId"
+                   asp-route-page="@(Model.Page - 1)">
+                    Önceki
+                </a>
+            }
+
+            <span>
+                Sayfa @Model.Page / @Model.TotalPages
+            </span>
+
+            @if (Model.Page < Model.TotalPages)
+            {
+                <a asp-action="Index"
+                   asp-route-search="@Model.Search"
+                   asp-route-status="@Model.Status"
+                   asp-route-branchId="@Model.BranchId"
+                   asp-route-page="@(Model.Page + 1)">
+                    Sonraki
+                </a>
+            }
+
+        </div>
+    }
+
+    <hr />
+
+    <a asp-controller="Dashboard"
+       asp-action="Index">
+        Dashboard'a Dön
+    </a>
+
+</div>

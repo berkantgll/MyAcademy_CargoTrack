@@ -1,0 +1,81 @@
+﻿@model CargoTrack.WebUI.Models.AdminUsersVm
+
+@{
+    ViewData["Title"] = "Kullanıcı Yönetimi";
+}
+
+<h2>Kullanıcı Yönetimi</h2>
+
+@if (TempData["Success"] != null)
+{
+    <p style="color:green">@TempData["Success"]</p>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>E-posta</th>
+            <th>Mevcut Rol</th>
+            <th>Yeni Rol</th>
+            <th>Şube</th>
+            <th>İşlem</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model.Users)
+        {
+            <tr>
+                <td>@user.Email</td>
+                <td>@user.Role</td>
+
+                @if (user.Role == "Admin")
+                {
+                    <td colspan="3">
+                        Admin hesabı korunuyor.
+                    </td>
+                }
+                else
+                {
+                    <td colspan="3">
+                        <form asp-action="Assign" method="post">
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden"
+                                   name="userId"
+                                   value="@user.Id" />
+
+                            <select name="role">
+                                <option value="User"
+                                        selected="@(user.Role == "User")">
+                                    User
+                                </option>
+                                <option value="Manager"
+                                        selected="@(user.Role == "Manager")">
+                                    Manager
+                                </option>
+                            </select>
+
+                            <select name="branchId">
+                                <option value="">
+                                    Şube seçiniz
+                                </option>
+
+                                @foreach (var branch in Model.Branches)
+                                {
+                                    <option value="@branch.Id"
+                                            selected="@(user.BranchId == branch.Id)">
+                                        @branch.BranchName
+                                    </option>
+                                }
+                            </select>
+
+                            <button type="submit">
+                                Kaydet
+                            </button>
+                        </form>
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>

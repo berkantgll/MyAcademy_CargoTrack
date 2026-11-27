@@ -1,0 +1,185 @@
+﻿@model CargoTrack.DTO.ReportDtos.AdminReportDto
+
+@{
+    ViewData["Title"] = "Operasyon Raporları";
+}
+
+<div class="container py-4">
+
+    <h2>Operasyon Raporları</h2>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="border rounded p-3">
+                <strong>Toplam Kargo</strong>
+                <h3>@Model.TotalCargos</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="border rounded p-3">
+                <strong>Aktif Kargo</strong>
+                <h3>@Model.ActiveCargos</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="border rounded p-3">
+                <strong>Geciken Kargo</strong>
+                <h3>@Model.DelayedCargos</h3>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="border rounded p-3">
+                <strong>Teslim Edilen</strong>
+                <h3>@Model.DeliveredCargos</h3>
+            </div>
+        </div>
+    </div>
+
+    <h4>Performans Özeti</h4>
+
+    <table class="table table-bordered mb-4">
+        <tbody>
+            <tr>
+                <th>Teslimat Oranı</th>
+                <td>@Model.DeliveryRate.ToString("N1")%</td>
+            </tr>
+            <tr>
+                <th>Zamanında Teslimat Oranı</th>
+                <td>@Model.OnTimeRate.ToString("N1")%</td>
+            </tr>
+            <tr>
+                <th>İade Oranı</th>
+                <td>@Model.ReturnRate.ToString("N1")%</td>
+            </tr>
+            <tr>
+                <th>Ortalama Teslimat Süresi</th>
+                <td>@Model.AverageDeliveryHours.ToString("N1") saat</td>
+            </tr>
+            <tr>
+                <th>Aktif Şube</th>
+                <td>@Model.ActiveBranches</td>
+            </tr>
+            <tr>
+                <th>Aktif Personel</th>
+                <td>@Model.ActiveEmployees</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>Kargo Durum Dağılımı</h4>
+
+    <table class="table table-bordered mb-4">
+        <thead>
+            <tr>
+                <th>Durum</th>
+                <th>Adet</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.StatusDistribution)
+            {
+                <tr>
+                    <td>@item.Status</td>
+                    <td>@item.Count</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h4>Son 7 Günlük Kargo Trafiği</h4>
+
+    <table class="table table-bordered mb-4">
+        <thead>
+            <tr>
+                <th>Tarih (UTC)</th>
+                <th>Oluşturulan Kargo</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var day in Model.Last7Days)
+            {
+                <tr>
+                    <td>@day.Date.ToString("dd.MM.yyyy")</td>
+                    <td>@day.Count</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h4>En Fazla Kargo Gönderen Şubeler</h4>
+
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Şube</th>
+                        <th>Adet</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var branch in Model.TopSendingBranches)
+                    {
+                        <tr>
+                            <td>@branch.BranchName</td>
+                            <td>@branch.Count</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="col-md-6">
+            <h4>En Fazla Teslimat Yapan Şubeler</h4>
+
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Şube</th>
+                        <th>Adet</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var branch in Model.TopDeliveringBranches)
+                    {
+                        <tr>
+                            <td>@branch.BranchName</td>
+                            <td>@branch.Count</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <h4>Personel Performansı</h4>
+
+    <table class="table table-bordered mb-4">
+        <thead>
+            <tr>
+                <th>Personel</th>
+                <th>Başarılı Teslimat</th>
+                <th>Başarısız Deneme</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var employee in Model.EmployeePerformance)
+            {
+                <tr>
+                    <td>@employee.EmployeeName</td>
+                    <td>@employee.DeliveredCount</td>
+                    <td>@employee.FailedCount</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <a asp-controller="Dashboard"
+       asp-action="Index">
+        Dashboard'a Dön
+    </a>
+
+</div>

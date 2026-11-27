@@ -1,0 +1,101 @@
+﻿@model List<CargoTrack.DTO.EmployeeDtos.EmployeeDto>
+
+@{
+    ViewData["Title"] = "Çalışan Yönetimi";
+
+    var branches =
+        ViewBag.Branches as List<CargoTrack.DTO.BranchDtos.BranchDto>
+        ?? new List<CargoTrack.DTO.BranchDtos.BranchDto>();
+}
+
+<div class="container py-4">
+
+    <h2>Çalışan Yönetimi</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+
+    <h4>Yeni Çalışan</h4>
+
+    <form asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="mb-3">
+            <label>Çalışan Kodu</label>
+            <input name="EmployeeCode"
+                   class="form-control"
+                   required />
+        </div>
+
+        <div class="mb-3">
+            <label>Ad Soyad</label>
+            <input name="FullName"
+                   class="form-control"
+                   required />
+        </div>
+
+        <div class="mb-3">
+            <label>Telefon</label>
+            <input name="PhoneNumber"
+                   class="form-control"
+                   required />
+        </div>
+
+        <div class="mb-3">
+            <label>Şube</label>
+            <select name="BranchId"
+                    class="form-select"
+                    required>
+                <option value="">Şube seçiniz</option>
+
+                @foreach (var branch in branches)
+                {
+                    <option value="@branch.Id">
+                        @branch.BranchName
+                    </option>
+                }
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Çalışan Ekle
+        </button>
+    </form>
+
+    <hr />
+
+    <h4>Kayıtlı Çalışanlar</h4>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Kod</th>
+                <th>Ad Soyad</th>
+                <th>Şube</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var employee in Model)
+            {
+                <tr>
+                    <td>@employee.EmployeeCode</td>
+                    <td>@employee.FullName</td>
+                    <td>@employee.BranchName</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+</div>

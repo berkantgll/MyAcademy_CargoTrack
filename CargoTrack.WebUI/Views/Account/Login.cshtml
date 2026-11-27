@@ -1,0 +1,55 @@
+﻿@model CargoTrack.DTO.AuthDtos.LoginDto
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>CargoTrack - Giriş Yap</title>
+</head>
+<body>
+    <h2>CargoTrack - Giriş Yap</h2>
+
+    <form asp-controller="Account"
+          asp-action="Login"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="All"
+             style="color:red"></div>
+
+        <div>
+            <label asp-for="Email">E-posta</label>
+            <input asp-for="Email" />
+        </div>
+
+        <div>
+            <label asp-for="Password">Şifre</label>
+            <input asp-for="Password"
+                   type="password" />
+        </div>
+
+        <div>
+            <input asp-for="RememberMe"
+                   type="checkbox" />
+            <label asp-for="RememberMe">
+                Beni Hatırla
+            </label>
+        </div>
+
+        <button type="submit">Giriş Yap</button>
+    </form>
+
+    <p>
+        Hesabın yok mu?
+        <a asp-controller="Account"
+           asp-action="Register">
+            Kayıt Ol
+        </a>
+    </p>
+</body>
+</html>

@@ -1,0 +1,107 @@
+﻿@model CargoTrack.DTO.AuditDtos.AuditLogPageDto
+
+@{
+    ViewData["Title"] = "İşlem Kayıtları";
+}
+
+<div class="container py-4">
+
+    <h2>AuditLog - İşlem Geçmişi</h2>
+
+    <p>
+        Toplam @Model.TotalCount işlem kaydı
+    </p>
+
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Kullanıcı</th>
+                    <th>İşlem</th>
+                    <th>Entity</th>
+                    <th>Açıklama</th>
+                    <th>Değişiklik</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var log in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            @(log.ActionDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
+                        </td>
+
+                        <td>
+                            @(log.PerformedBy ?? "Sistem")
+                        </td>
+
+                        <td>@log.ActionType</td>
+
+                        <td>
+                            @log.EntityName
+                            <small class="d-block">
+                                @log.EntityId
+                            </small>
+                        </td>
+
+                        <td>@log.Description</td>
+
+                        <td>
+                            <details>
+                                <summary>Görüntüle</summary>
+
+                                <strong>Eski:</strong>
+                                <pre>@log.OldValues</pre>
+
+                                <strong>Yeni:</strong>
+                                <pre>@log.NewValues</pre>
+                            </details>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (!Model.Items.Any())
+    {
+        <p>Henüz işlem kaydı bulunmuyor.</p>
+    }
+
+    @if (Model.TotalPages > 1)
+    {
+        <div class="d-flex gap-3">
+
+            @if (Model.Page > 1)
+            {
+                <a asp-action="Index"
+                   asp-route-page="@(Model.Page - 1)">
+                    Önceki
+                </a>
+            }
+
+            <span>
+                @Model.Page / @Model.TotalPages
+            </span>
+
+            @if (Model.Page < Model.TotalPages)
+            {
+                <a asp-action="Index"
+                   asp-route-page="@(Model.Page + 1)">
+                    Sonraki
+                </a>
+            }
+
+        </div>
+    }
+
+    <hr />
+
+    <a asp-controller="Dashboard"
+       asp-action="Index">
+        Dashboard'a Dön
+    </a>
+
+</div>

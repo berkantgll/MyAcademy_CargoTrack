@@ -1,0 +1,55 @@
+﻿@model List<CargoTrack.DTO.CargoDtos.CargoListDto>
+
+@{
+    ViewData["Title"] = "Kargolarım";
+}
+
+<div class="container py-4">
+
+    <h2>Kargolarım</h2>
+
+    @if (Model == null || !Model.Any())
+    {
+        <p>Henüz size ait bir kargo bulunmuyor.</p>
+    }
+    else
+    {
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Takip Numarası</th>
+                    <th>Durum</th>
+                    <th>Çıkış Şubesi</th>
+                    <th>Varış Şubesi</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var cargo in Model)
+                {
+                    <tr>
+                        <td>@cargo.TrackingNumber</td>
+                        <td>@cargo.Status</td>
+                        <td>@cargo.OriginBranchName</td>
+                        <td>@cargo.DestinationBranchName</td>
+
+                        <td>
+                            <a asp-controller="UserCargos"
+                               asp-action="Details"
+                               asp-route-id="@cargo.Id">
+                                Detay
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <a asp-controller="Dashboard"
+       asp-action="Index">
+        Dashboard'a Dön
+    </a>
+
+</div>

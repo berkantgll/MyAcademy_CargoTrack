@@ -27,6 +27,19 @@ public class CargoTrackDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     {
         base.OnModelCreating(modelBuilder);
 
+
+        modelBuilder.Entity<CargoMovement>()
+            .Property(x => x.Id)
+            .ValueGeneratedNever();
+
+        modelBuilder.Entity<DeliveryException>()
+            .Property(x => x.Id)
+            .ValueGeneratedNever();
+
+        modelBuilder.Entity<Delivery>()
+            .Property(x => x.Id)
+            .ValueGeneratedNever();
+
         modelBuilder.Entity<Cargo>()
             .Property(x => x.TotalPrice)
             .HasPrecision(18, 2);

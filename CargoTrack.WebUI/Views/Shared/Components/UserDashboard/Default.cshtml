@@ -1,0 +1,183 @@
+﻿@model CargoTrack.DTO.DashboardDtos.UserDashboardDto
+
+<style>
+    .user-dashboard {
+        margin: 25px 0;
+    }
+
+    .user-stats {
+        display: grid;
+        grid-template-columns: repeat( auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        margin: 20px 0;
+    }
+
+    .user-stat {
+        background: white;
+        padding: 20px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+    }
+
+    .user-stat-label {
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    .user-stat-number {
+        font-size: 26px;
+        font-weight: bold;
+        margin-top: 9px;
+    }
+
+    .user-section {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 18px;
+        overflow-x: auto;
+    }
+</style>
+
+<section class="user-dashboard">
+
+    <h2>Kargo Özetim</h2>
+
+    <div class="user-stats">
+
+        <div class="user-stat">
+            <div class="user-stat-label">Toplam Kargom</div>
+            <div class="user-stat-number">@Model.TotalCargos</div>
+        </div>
+
+        <div class="user-stat">
+            <div class="user-stat-label">Gelen</div>
+            <div class="user-stat-number">@Model.IncomingCargos</div>
+        </div>
+
+        <div class="user-stat">
+            <div class="user-stat-label">Gönderilen</div>
+            <div class="user-stat-number">@Model.OutgoingCargos</div>
+        </div>
+
+        <div class="user-stat">
+            <div class="user-stat-label">Aktif</div>
+            <div class="user-stat-number">@Model.ActiveCargos</div>
+        </div>
+
+        <div class="user-stat">
+            <div class="user-stat-label">Teslim Edilen</div>
+            <div class="user-stat-number">@Model.DeliveredCargos</div>
+        </div>
+
+        <div class="user-stat">
+            <div class="user-stat-label">İade Edilen</div>
+            <div class="user-stat-number">@Model.ReturnedCargos</div>
+        </div>
+
+    </div>
+
+    <div class="user-section">
+
+        <h3>Son Kargolarım</h3>
+
+        @if (!Model.RecentCargos.Any())
+        {
+            <p>Henüz kargonuz bulunmuyor.</p>
+        }
+        else
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>Takip No</th>
+                        <th>Yön</th>
+                        <th>Durum</th>
+                        <th>Tahmini Teslimat</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var cargo in Model.RecentCargos)
+                    {
+                        <tr>
+                            <td>@cargo.TrackingNumber</td>
+                            <td>@cargo.Direction</td>
+                            <td>@cargo.Status</td>
+                            <td>
+                                @(cargo.EstimatedDeliveryDate
+                                    .ToString("dd.MM.yyyy"))
+                            </td>
+                            <td>
+                                <a asp-controller="UserCargos"
+                                   asp-action="Details"
+                                   asp-route-id="@cargo.Id">
+                                    Detay
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+    </div>
+
+    <div class="user-section">
+
+        <h3>Son Kargo Hareketleri</h3>
+
+        @if (!Model.RecentMovements.Any())
+        {
+            <p>Henüz hareket kaydı bulunmuyor.</p>
+        }
+        else
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>Takip No</th>
+                        <th>Durum</th>
+                        <th>Tarih</th>
+                        <th>Açıklama</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var movement in Model.RecentMovements)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-controller="UserCargos"
+                                   asp-action="Details"
+                                   asp-route-id="@movement.CargoId">
+                                    @movement.TrackingNumber
+                                </a>
+                            </td>
+
+                            <td>@movement.Status</td>
+
+                            <td>
+                                @(movement.MovementDate
+                                    .AddHours(3)
+                                    .ToString("dd.MM.yyyy HH:mm"))
+                            </td>
+
+                            <td>@movement.Description</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+    </div>
+
+    <a asp-controller="UserCargos"
+       asp-action="Index"
+       class="create-link">
+        Bütün Kargolarım
+    </a>
+
+</section>
