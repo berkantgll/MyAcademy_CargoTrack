@@ -1,238 +1,963 @@
 ﻿@model CargoTrack.DTO.ReportDtos.AdminReportDto
 
 @{
-    var maxDaily = Math.Max(
-        1,
+    var tr = new System.Globalization.CultureInfo("tr-TR");
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+
+    var maxDaily = Math.Max(1,
         Model.Last7Days.Select(x => x.Count)
             .DefaultIfEmpty(0).Max());
+
+    var maxBranch = Math.Max(1,
+        Model.TopSendingBranches.Select(x => x.Count)
+            .DefaultIfEmpty(0).Max());
+
+    var totalStatus = Model.StatusDistribution.Sum(x => x.Count);
+    var totalLast7Days = Model.Last7Days.Sum(x => x.Count);
 }
 
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet" />
+
 <style>
-    .dashboard-stats {
-        margin: 28px 0;
+    .ct-admin {
+        font-family: 'Hanken Grotesk', Arial, sans-serif;
+        color: #0b1c30;
+        margin: 24px 0 36px;
     }
 
-    .dashboard-stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 14px;
-        margin-bottom: 24px;
+        .ct-admin * {
+            box-sizing: border-box;
+        }
+
+    .ct-admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 26px;
     }
 
-    .dashboard-stat-card {
-        background: white;
-        border: 1px solid #e2e6ed;
+    .ct-eyebrow {
+        color: #e47f00;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        margin: 0 0 9px;
+    }
+
+    .ct-admin-title {
+        font-size: clamp(25px, 3vw, 34px);
+        letter-spacing: -1px;
+        margin: 0 0 8px;
+        font-weight: 800;
+    }
+
+    .ct-admin-subtitle {
+        font-size: 14px;
+        color: #73849a;
+        margin: 0;
+    }
+
+    .ct-report-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        background: #0b1c30;
+        color: white !important;
+        padding: 12px 17px;
         border-radius: 10px;
-        padding: 20px;
-    }
-
-    .dashboard-stat-label {
-        color: #64748b;
         font-size: 13px;
-        margin-bottom: 12px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: background .2s, transform .2s;
     }
 
-    .dashboard-stat-value {
-        font-size: 27px;
-        font-weight: bold;
-        color: #14253d;
+        .ct-report-link:hover {
+            background: #203e60;
+            transform: translateY(-1px);
+        }
+
+    /* ANA İSTATİSTİK KARTLARI */
+
+    .ct-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 17px;
+        margin-bottom: 17px;
     }
 
-    .dashboard-report-box {
+    .ct-stat-card {
+        min-width: 0;
         background: white;
-        border: 1px solid #e2e6ed;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 18px;
+        border: 1px solid #e5eaf1;
+        border-radius: 17px;
+        padding: 23px;
+        box-shadow: 0 4px 16px rgba(12,32,55,.035);
+        transition: transform .2s, box-shadow .2s;
     }
 
-    .dashboard-bar-row {
+        .ct-stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(12,32,55,.075);
+        }
+
+        .ct-stat-card.featured {
+            background: linear-gradient(145deg, #0b1c30, #1b3554);
+            border-color: #0b1c30;
+            color: white;
+        }
+
+    .ct-stat-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 27px;
+    }
+
+    .ct-stat-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #6d7e94;
+    }
+
+    .featured .ct-stat-label {
+        color: #bfd0e5;
+    }
+
+    .ct-stat-icon {
+        display: grid;
+        place-items: center;
+        width: 43px;
+        height: 43px;
+        flex-shrink: 0;
+        border-radius: 12px;
+        background: #eef4fc;
+        color: #244d79;
+    }
+
+        .ct-stat-icon.orange {
+            color: #e58600;
+            background: #fff2df;
+        }
+
+        .ct-stat-icon.red {
+            color: #de5959;
+            background: #fff0f0;
+        }
+
+        .ct-stat-icon.green {
+            color: #229b73;
+            background: #e7f9f1;
+        }
+
+    .featured .ct-stat-icon {
+        background: rgba(253,139,0,.15);
+        color: #fd8b00;
+    }
+
+    .ct-stat-number {
+        font-size: clamp(26px, 3vw, 37px);
+        font-weight: 800;
+        letter-spacing: -1.2px;
+        line-height: 1.1;
+        margin: 0 0 11px;
+    }
+
+    .ct-stat-foot {
+        font-size: 12px;
+        color: #8a9aaf;
+    }
+
+    .featured .ct-stat-foot {
+        color: #bfd0e5;
+    }
+
+    /* İKİNCİL İSTATİSTİKLER */
+
+    .ct-mini-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 17px;
+        margin-bottom: 23px;
+    }
+
+    .ct-mini-card {
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-width: 0;
+        padding: 19px 21px;
+        background: white;
+        border: 1px solid #e5eaf1;
+        border-radius: 15px;
+    }
+
+    .ct-mini-label {
+        font-size: 12px;
+        color: #75859a;
+        margin-bottom: 8px;
+    }
+
+    .ct-mini-value {
+        font-size: 26px;
+        font-weight: 800;
+        color: #0b1c30;
+        line-height: 1.1;
+    }
+
+    .ct-mini-symbol {
+        width: 39px;
+        height: 39px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: #f2f6fc;
+        color: #244d79;
+        font-weight: 800;
+        font-size: 17px;
+        flex-shrink: 0;
+    }
+
+    /* RAPOR PANELLERİ */
+
+    .ct-charts-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+        gap: 19px;
+        margin-bottom: 19px;
+    }
+
+    .ct-panel {
+        background: white;
+        border: 1px solid #e5eaf1;
+        border-radius: 17px;
+        padding: 25px;
+        box-shadow: 0 4px 16px rgba(12,32,55,.025);
+        min-width: 0;
+    }
+
+    .ct-panel-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
         gap: 12px;
-        margin: 14px 0;
+        margin-bottom: 22px;
     }
 
-    .dashboard-bar-label {
-        min-width: 80px;
-        font-size: 13px;
+    .ct-panel-title {
+        font-size: 17px;
+        font-weight: 800;
+        margin: 0 0 6px;
+        letter-spacing: -.3px;
     }
 
-    .dashboard-bar-track {
+    .ct-panel-description {
+        font-size: 12px;
+        color: #8796a8;
+        margin: 0;
+    }
+
+    .ct-panel-tag {
+        padding: 7px 11px;
+        background: #f0f5fc;
+        color: #375778;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    /* 7 GÜNLÜK TRAFİK GRAFİĞİ */
+
+    .ct-chart-scroll {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .ct-traffic-bars {
+        display: flex;
+        align-items: stretch;
+        gap: 13px;
+        height: 245px;
+        min-width: 350px;
+        padding-top: 12px;
+    }
+
+    .ct-traffic-item {
+        display: flex;
         flex: 1;
-        height: 16px;
-        background: #eaf0f8;
-        border-radius: 5px;
+        min-width: 0;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .ct-traffic-value {
+        font-size: 12px;
+        color: #334b67;
+        font-weight: 800;
+        height: 25px;
+    }
+
+    .ct-traffic-plot {
+        position: relative;
+        width: 100%;
+        flex: 1;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        border-bottom: 1px solid #e8edf5;
+        background: repeating-linear-gradient( to top, transparent 0, transparent 42px, #f2f5f9 43px );
+    }
+
+    .ct-traffic-bar {
+        width: min(37px, 75%);
+        border-radius: 8px 8px 0 0;
+        background: linear-gradient(180deg, #ffab40, #fd8b00);
+        min-height: 4px;
+        transition: opacity .2s;
+    }
+
+        .ct-traffic-bar:hover {
+            opacity: .75;
+        }
+
+    .ct-day {
+        margin-top: 11px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #52647a;
+        text-transform: capitalize;
+    }
+
+    .ct-day-date {
+        margin-top: 3px;
+        font-size: 11px;
+        color: #97a4b4;
+    }
+
+    /* DURUM DAĞILIMI */
+
+    .ct-status-list {
+        display: flex;
+        flex-direction: column;
+        gap: 17px;
+    }
+
+    .ct-status-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .ct-status-name {
+        color: #43556d;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .ct-status-count {
+        font-weight: 800;
+        color: #0b1c30;
+        white-space: nowrap;
+    }
+
+    .ct-progress-track {
+        height: 9px;
+        width: 100%;
+        border-radius: 50px;
+        background: #edf2f8;
         overflow: hidden;
     }
 
-    .dashboard-bar-fill {
+    .ct-progress-fill {
         height: 100%;
-        background: #ff9100;
-        border-radius: 5px;
+        background: linear-gradient(90deg, #173654, #fd8b00);
+        border-radius: 50px;
     }
 
-    .dashboard-bar-count {
-        min-width: 25px;
-        text-align: right;
-        font-weight: bold;
+    /* ŞUBE SIRALAMASI */
+
+    .ct-table-wrap {
+        overflow-x: auto;
+    }
+
+    .ct-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: transparent;
+    }
+
+        .ct-table th {
+            text-align: left;
+            color: #8796a8;
+            background: #f8faff;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .6px;
+            text-transform: uppercase;
+            padding: 14px 15px;
+            border-bottom: 1px solid #e5eaf1;
+        }
+
+        .ct-table td {
+            padding: 17px 15px;
+            border-bottom: 1px solid #edf1f6;
+            color: #223751;
+            font-size: 13px;
+        }
+
+        .ct-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .ct-table tbody tr:hover {
+            background: #fafcff;
+        }
+
+    .ct-rank {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        background: #f0f5fc;
+        color: #24496e;
+        border-radius: 9px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .ct-branch-name {
+        font-weight: 700;
+    }
+
+    .ct-branch-count {
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .ct-branch-progress {
+        width: 100%;
+        max-width: 240px;
+        min-width: 90px;
+        height: 7px;
+        background: #edf2f8;
+        border-radius: 30px;
+        overflow: hidden;
+    }
+
+    .ct-branch-progress-fill {
+        height: 100%;
+        background: #fd8b00;
+        border-radius: 30px;
+    }
+
+    .ct-empty {
+        padding: 30px 12px;
+        text-align: center;
+        color: #8393a7;
+        font-size: 13px;
+    }
+
+    /* RESPONSIVE */
+
+    @@media (max-width: 1050px) {
+        .ct-stats-grid,
+        .ct-mini-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .ct-charts-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .ct-admin {
+            margin-top: 16px;
+        }
+
+        .ct-stats-grid,
+        .ct-mini-grid {
+            grid-template-columns: 1fr;
+            gap: 11px;
+        }
+
+        .ct-stat-card {
+            padding: 20px;
+        }
+
+        .ct-stat-top {
+            margin-bottom: 16px;
+        }
+
+        .ct-panel {
+            padding: 18px;
+        }
+
+        .ct-admin-header {
+            align-items: stretch;
+        }
+
+        .ct-report-link {
+            width: 100%;
+        }
     }
 </style>
 
-<section class="dashboard-stats">
+<section class="ct-admin">
 
-    <h2>Operasyon Özeti</h2>
+    <!-- BAŞLIK -->
+    <div class="ct-admin-header">
+        <div>
+            <p class="ct-eyebrow">CARGOTRACK / YÖNETİM PANELİ</p>
 
-    <div class="dashboard-stats-grid">
+            <h2 class="ct-admin-title">
+                Operasyon Merkezi
+            </h2>
 
-        <div class="dashboard-stat-card">
-            <div class="dashboard-stat-label">Toplam Kargo</div>
-            <div class="dashboard-stat-value">
+            <p class="ct-admin-subtitle">
+                Kargo operasyonlarınızın güncel genel görünümü.
+            </p>
+        </div>
+
+        <a asp-controller="AdminReports"
+           asp-action="Index"
+           class="ct-report-link">
+            Tüm Raporları Görüntüle
+            <span aria-hidden="true">↗</span>
+        </a>
+    </div>
+
+    <!-- ANA KARTLAR -->
+    <div class="ct-stats-grid">
+
+        <!-- TOPLAM -->
+        <div class="ct-stat-card featured">
+
+            <div class="ct-stat-top">
+                <span class="ct-stat-label">Toplam Kargo</span>
+
+                <span class="ct-stat-icon">
+                    <svg width="23" height="23"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.8"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+                        <path d="M3 7 12 3l9 4v10l-9 4-9-4V7Z" />
+                        <path d="m3 7 9 5 9-5M12 12v9" />
+                    </svg>
+                </span>
+            </div>
+
+            <div class="ct-stat-number">
                 @Model.TotalCargos
             </div>
+
+            <div class="ct-stat-foot">
+                Sistemde kayıtlı gönderiler
+            </div>
+
         </div>
 
-        <div class="dashboard-stat-card">
-            <div class="dashboard-stat-label">Aktif Kargo</div>
-            <div class="dashboard-stat-value">
+        <!-- AKTİF -->
+        <div class="ct-stat-card">
+
+            <div class="ct-stat-top">
+                <span class="ct-stat-label">Aktif Kargolar</span>
+
+                <span class="ct-stat-icon orange">
+                    <svg width="23" height="23"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.8"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+                        <path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z" />
+                        <circle cx="7" cy="18" r="2" />
+                        <circle cx="18" cy="18" r="2" />
+                    </svg>
+                </span>
+            </div>
+
+            <div class="ct-stat-number">
                 @Model.ActiveCargos
             </div>
+
+            <div class="ct-stat-foot">
+                Süreci devam eden gönderiler
+            </div>
+
         </div>
 
-        <div class="dashboard-stat-card">
-            <div class="dashboard-stat-label">Geciken Kargo</div>
-            <div class="dashboard-stat-value">
+        <!-- GECİKEN -->
+        <div class="ct-stat-card">
+
+            <div class="ct-stat-top">
+                <span class="ct-stat-label">Geciken Kargolar</span>
+
+                <span class="ct-stat-icon red">
+                    <svg width="23" height="23"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.8"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 7v5l3 2" />
+                    </svg>
+                </span>
+            </div>
+
+            <div class="ct-stat-number">
                 @Model.DelayedCargos
             </div>
+
+            <div class="ct-stat-foot">
+                Tahmini teslimatı aşanlar
+            </div>
+
         </div>
 
-        <div class="dashboard-stat-card">
-            <div class="dashboard-stat-label">Teslim Edilen</div>
-            <div class="dashboard-stat-value">
+        <!-- TESLİM EDİLEN -->
+        <div class="ct-stat-card">
+
+            <div class="ct-stat-top">
+                <span class="ct-stat-label">Teslim Edilen</span>
+
+                <span class="ct-stat-icon green">
+                    <svg width="23" height="23"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.8"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="m8 12 3 3 5-6" />
+                    </svg>
+                </span>
+            </div>
+
+            <div class="ct-stat-number">
                 @Model.DeliveredCargos
             </div>
-        </div>
 
-        <div class="dashboard-stat-card">
-            <div class="dashboard-stat-label">Teslimat Oranı</div>
-            <div class="dashboard-stat-value">
-                @(Model.DeliveryRate.ToString("N1"))%
+            <div class="ct-stat-foot">
+                Başarıyla teslim edilenler
             </div>
-        </div>
 
-        <div class="dashboard-stat-card">
-            <div class="dashboard-stat-label">İade Oranı</div>
-            <div class="dashboard-stat-value">
-                @(Model.ReturnRate.ToString("N1"))%
-            </div>
-        </div>
-
-        <div class="dashboard-stat-card">
-            <div class="dashboard-stat-label">Aktif Şube</div>
-            <div class="dashboard-stat-value">
-                @Model.ActiveBranches
-            </div>
-        </div>
-
-        <div class="dashboard-stat-card">
-            <div class="dashboard-stat-label">Aktif Personel</div>
-            <div class="dashboard-stat-value">
-                @Model.ActiveEmployees
-            </div>
         </div>
 
     </div>
 
-    <div class="dashboard-report-box">
+    <!-- İKİNCİL İSTATİSTİKLER -->
+    <div class="ct-mini-grid">
 
-        <h3>Son 7 Günlük Kargo Trafiği</h3>
+        <div class="ct-mini-card">
+            <div>
+                <div class="ct-mini-label">Teslimat Oranı</div>
+                <div class="ct-mini-value">
+                    @(Model.DeliveryRate.ToString("N1"))%
+                </div>
+            </div>
 
-        @foreach (var day in Model.Last7Days)
-        {
-            var barWidth = day.Count * 100.0 / maxDaily;
+            <span class="ct-mini-symbol">%</span>
+        </div>
 
-            <div class="dashboard-bar-row">
+        <div class="ct-mini-card">
+            <div>
+                <div class="ct-mini-label">İade Oranı</div>
+                <div class="ct-mini-value">
+                    @(Model.ReturnRate.ToString("N1"))%
+                </div>
+            </div>
 
-                <span class="dashboard-bar-label">
-                    @(day.Date.ToString("dd.MM.yyyy"))
-                </span>
+            <span class="ct-mini-symbol">↩</span>
+        </div>
 
-                <div class="dashboard-bar-track">
-                    <div class="dashboard-bar-fill"
-                         style="width:@(barWidth)%">
-                    </div>
+        <div class="ct-mini-card">
+            <div>
+                <div class="ct-mini-label">Aktif Şube</div>
+                <div class="ct-mini-value">
+                    @Model.ActiveBranches
+                </div>
+            </div>
+
+            <span class="ct-mini-symbol">⌂</span>
+        </div>
+
+        <div class="ct-mini-card">
+            <div>
+                <div class="ct-mini-label">Aktif Personel</div>
+                <div class="ct-mini-value">
+                    @Model.ActiveEmployees
+                </div>
+            </div>
+
+            <span class="ct-mini-symbol">♙</span>
+        </div>
+
+    </div>
+
+    <!-- GRAFİKLER -->
+    <div class="ct-charts-grid">
+
+        <!-- SON 7 GÜN -->
+        <div class="ct-panel">
+
+            <div class="ct-panel-heading">
+                <div>
+                    <h3 class="ct-panel-title">
+                        Kargo Trafiği
+                    </h3>
+
+                    <p class="ct-panel-description">
+                        Son 7 günlük kargo hareketliliği
+                    </p>
                 </div>
 
-                <span class="dashboard-bar-count">
-                    @day.Count
+                <span class="ct-panel-tag">
+                    Toplam: @totalLast7Days
                 </span>
-
             </div>
-        }
+
+            @if (!Model.Last7Days.Any())
+            {
+                <div class="ct-empty">
+                    Henüz grafik verisi bulunmuyor.
+                </div>
+            }
+            else
+            {
+                <div class="ct-chart-scroll">
+                    <div class="ct-traffic-bars">
+
+                        @foreach (var day in Model.Last7Days.OrderBy(x => x.Date))
+                        {
+                            var barHeight =
+                                day.Count * 100.0 / maxDaily;
+
+                            var barHeightCss =
+                                barHeight.ToString("0.##", invariant);
+
+                            <div class="ct-traffic-item">
+
+                                <span class="ct-traffic-value">
+                                    @day.Count
+                                </span>
+
+                                <div class="ct-traffic-plot">
+
+                                    <div class="ct-traffic-bar"
+                                         style="height:@(barHeightCss)%"
+                                         title="@(day.Date.ToString("dd.MM.yyyy")): @day.Count kargo">
+                                    </div>
+
+                                </div>
+
+                                <div class="ct-day">
+                                    @(day.Date.ToString("ddd", tr))
+                                </div>
+
+                                <div class="ct-day-date">
+                                    @(day.Date.ToString("dd.MM"))
+                                </div>
+
+                            </div>
+                        }
+
+                    </div>
+                </div>
+            }
+
+        </div>
+
+        <!-- DURUM DAĞILIMI -->
+        <div class="ct-panel">
+
+            <div class="ct-panel-heading">
+                <div>
+                    <h3 class="ct-panel-title">
+                        Kargo Durum Dağılımı
+                    </h3>
+
+                    <p class="ct-panel-description">
+                        Gönderilerin mevcut durumları
+                    </p>
+                </div>
+
+                <span class="ct-panel-tag">
+                    @totalStatus Kargo
+                </span>
+            </div>
+
+            @if (!Model.StatusDistribution.Any())
+            {
+                <div class="ct-empty">
+                    Henüz durum verisi bulunmuyor.
+                </div>
+            }
+            else
+            {
+                <div class="ct-status-list">
+
+                    @foreach (var item in Model.StatusDistribution.OrderByDescending(x => x.Count))
+                    {
+                        var percentage = totalStatus > 0
+                            ? item.Count * 100.0 / totalStatus
+                            : 0;
+
+                        var percentageCss =
+                            percentage.ToString("0.##", invariant);
+
+                        <div class="ct-status-item">
+
+                            <div class="ct-status-heading">
+
+                                <span class="ct-status-name">
+                                    @item.Status
+                                </span>
+
+                                <span class="ct-status-count">
+                                    @item.Count
+                                    <span style="color:#9aa8b9;font-weight:500">
+                                        (@(percentage.ToString("N1"))%)
+                                    </span>
+                                </span>
+
+                            </div>
+
+                            <div class="ct-progress-track">
+
+                                <div class="ct-progress-fill"
+                                     style="width:@(percentageCss)%">
+                                </div>
+
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+            }
+
+        </div>
 
     </div>
 
-    <div class="dashboard-report-box">
+    <!-- EN ÇOK KARGO GÖNDEREN ŞUBELER -->
+    <div class="ct-panel">
 
-        <h3>En Çok Kargo Gönderen 5 Şube</h3>
+        <div class="ct-panel-heading">
+            <div>
+                <h3 class="ct-panel-title">
+                    En Çok Kargo Gönderen Şubeler
+                </h3>
+
+                <p class="ct-panel-description">
+                    Gönderi sayısına göre ilk 5 şube
+                </p>
+            </div>
+
+            <span class="ct-panel-tag">
+                İlk 5 Şube
+            </span>
+        </div>
 
         @if (!Model.TopSendingBranches.Any())
         {
-            <p>Henüz veri bulunmuyor.</p>
+            <div class="ct-empty">
+                Henüz şube verisi bulunmuyor.
+            </div>
         }
         else
         {
-            <table>
-                <thead>
-                    <tr>
-                        <th>Şube</th>
-                        <th>Kargo Sayısı</th>
-                    </tr>
-                </thead>
+            <div class="ct-table-wrap">
 
-                <tbody>
-                    @foreach (var branch in Model.TopSendingBranches)
-                    {
+                <table class="ct-table">
+
+                    <thead>
                         <tr>
-                            <td>@branch.BranchName</td>
-                            <td>@branch.Count</td>
+                            <th style="width:70px">Sıra</th>
+                            <th>Şube Adı</th>
+                            <th>Gönderi Sayısı</th>
+                            <th style="width:35%">Dağılım</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+
+                    <tbody>
+
+                        @{
+                            var rank = 0;
+                        }
+
+                        @foreach (var branch in Model.TopSendingBranches)
+                        {
+                            rank++;
+
+                            var branchWidth =
+                                branch.Count * 100.0 / maxBranch;
+
+                            var branchWidthCss =
+                                branchWidth.ToString("0.##", invariant);
+
+                            <tr>
+                                <td>
+                                    <span class="ct-rank">
+                                        @rank
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="ct-branch-name">
+                                        @branch.BranchName
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="ct-branch-count">
+                                        @branch.Count
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="ct-branch-progress">
+
+                                        <div class="ct-branch-progress-fill"
+                                             style="width:@(branchWidthCss)%">
+                                        </div>
+
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
         }
 
     </div>
-
-    <div class="dashboard-report-box">
-
-        <h3>Kargo Durum Dağılımı</h3>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Durum</th>
-                    <th>Adet</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                @foreach (var item in Model.StatusDistribution)
-                {
-                    <tr>
-                        <td>@item.Status</td>
-                        <td>@item.Count</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-
-    </div>
-
-    <a asp-controller="AdminReports"
-       asp-action="Index"
-       class="create-link">
-        Tüm Operasyon Raporları
-    </a>
 
 </section>

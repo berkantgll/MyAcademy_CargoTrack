@@ -54,4 +54,74 @@ public class AdminBranchesController : Controller
 
         return RedirectToAction(nameof(Index));
     }
+
+
+    [HttpGet]
+    public async Task<IActionResult> Edit(Guid id)
+    {
+        var branch = await _branchService.GetByIdAsync(id);
+
+        if (branch == null)
+            return NotFound();
+
+        return View(branch);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(BranchDto dto)
+    {
+        if (dto.Id == Guid.Empty)
+            return BadRequest();
+
+        if (!ModelState.IsValid)
+            return View(dto);
+
+        try
+        {
+            var branch = await _branchService.GetByIdAsync(dto.Id);
+
+            if (branch == null)
+                return NotFound();
+
+            await _branchService.SaveAsync(dto);
+
+            TempData["Success"] =
+                "Şube bilgileri başarıyla güncellendi.";
+
+            return RedirectToAction(nameof(Index));
+        }
+        catch (ArgumentException ex)
+        {
+            ModelState.AddModelError("", ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError("", ex.Message);
+        }
+
+        return View(dto);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        try
+        {
+            bool deleted = await _branchService.DeleteAsync(id);
+
+            TempData[deleted ? "Success" : "Error"] =
+                deleted
+                    ? "Şube başarıyla silindi."
+                    : "Şube bulunamadı.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
 }

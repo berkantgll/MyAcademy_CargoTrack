@@ -1,185 +1,993 @@
 ﻿@model CargoTrack.DTO.ReportDtos.AdminReportDto
 
 @{
+    Layout = "_PanelLayout";
     ViewData["Title"] = "Operasyon Raporları";
+
+    var tr = new System.Globalization.CultureInfo("tr-TR");
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+
+    var dailyMax = Math.Max(1, Model.Last7Days.Select(x => x.Count).DefaultIfEmpty(0).Max());
+    var sendingMax = Math.Max(1, Model.TopSendingBranches.Select(x => x.Count).DefaultIfEmpty(0).Max());
+    var deliveringMax = Math.Max(1, Model.TopDeliveringBranches.Select(x => x.Count).DefaultIfEmpty(0).Max());
+    var statusTotal = Model.StatusDistribution.Sum(x => x.Count);
+    var weekTotal = Model.Last7Days.Sum(x => x.Count);
+
+    var deliveryBar = Math.Clamp(Convert.ToDouble(Model.DeliveryRate), 0.0, 100.0).ToString("0.##", invariant);
+    var onTimeBar = Math.Clamp(Convert.ToDouble(Model.OnTimeRate), 0.0, 100.0).ToString("0.##", invariant);
+    var returnBar = Math.Clamp(Convert.ToDouble(Model.ReturnRate), 0.0, 100.0).ToString("0.##", invariant);
 }
 
-<div class="container py-4">
+<style>
+    .rp-page {
+        color: #0b1c30;
+        font-family: 'Hanken Grotesk', Arial, sans-serif;
+    }
 
-    <h2>Operasyon Raporları</h2>
+        .rp-page * {
+            box-sizing: border-box;
+        }
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="border rounded p-3">
-                <strong>Toplam Kargo</strong>
-                <h3>@Model.TotalCargos</h3>
+    .rp-page-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin: 4px 0 27px;
+    }
+
+    .rp-eyebrow {
+        color: #e78300;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        margin-bottom: 10px;
+    }
+
+    .rp-page-heading h1 {
+        margin: 0 0 8px;
+        font-weight: 800;
+        font-size: clamp(26px,3vw,34px);
+        letter-spacing: -1.2px;
+    }
+
+    .rp-page-heading p {
+        margin: 0;
+        color: #8291a5;
+        font-size: 14px;
+    }
+
+    .rp-heading-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .rp-btn {
+        min-height: 43px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: #fff;
+        border: 1px solid #dfe7f1;
+        color: #24415f;
+        border-radius: 10px;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+        .rp-btn:hover {
+            background: #eef4fc;
+            color: #173755;
+        }
+
+        .rp-btn.primary {
+            color: #0b1c30;
+            background: #fd8b00;
+            border-color: #fd8b00;
+        }
+
+            .rp-btn.primary:hover {
+                background: #ffad46;
+            }
+
+        .rp-btn .material-symbols-outlined {
+            font-size: 18px;
+        }
+
+    .rp-grid4 {
+        display: grid;
+        grid-template-columns: repeat(4,minmax(0,1fr));
+        gap: 17px;
+        margin-bottom: 17px;
+    }
+
+    .rp-card {
+        min-width: 0;
+        background: white;
+        border: 1px solid #e3eaf3;
+        border-radius: 17px;
+        box-shadow: 0 4px 18px rgba(12,32,55,.035);
+    }
+
+    .rp-stat {
+        padding: 23px;
+        min-height: 166px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+        .rp-stat.dark {
+            background: linear-gradient(145deg,#0b1c30,#1c3858);
+            border-color: #0b1c30;
+            color: #fff;
+        }
+
+    .rp-stat-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 12px;
+    }
+
+    .rp-stat-label {
+        color: #73849a;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .rp-stat.dark .rp-stat-label {
+        color: #cad8e9;
+    }
+
+    .rp-icon {
+        width: 42px;
+        height: 42px;
+        flex-shrink: 0;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: #eef4fd;
+        color: #37638d;
+    }
+
+        .rp-icon.orange {
+            color: #e68300;
+            background: #fff1df;
+        }
+
+        .rp-icon.red {
+            color: #d44a52;
+            background: #fff0f1;
+        }
+
+        .rp-icon.green {
+            color: #16896a;
+            background: #e5f8f0;
+        }
+
+    .rp-stat.dark .rp-icon {
+        background: rgba(253,139,0,.14);
+        color: #fd8b00;
+    }
+
+    .rp-icon .material-symbols-outlined {
+        font-size: 22px;
+    }
+
+    .rp-stat-number {
+        margin: 0 0 7px;
+        font-size: 35px;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -1px;
+    }
+
+    .rp-stat-note {
+        margin: 0;
+        color: #8b9cb2;
+        font-size: 11px;
+    }
+
+    .rp-stat.dark .rp-stat-note {
+        color: #bfd0e5;
+    }
+
+    .rp-section-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin: 27px 0 15px;
+    }
+
+        .rp-section-label h2 {
+            font-size: 19px;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -.4px;
+        }
+
+        .rp-section-label span {
+            color: #8898ac;
+            font-size: 12px;
+        }
+
+    .rp-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4,minmax(0,1fr));
+        gap: 17px;
+        margin-bottom: 19px;
+    }
+
+    .rp-kpi {
+        padding: 20px 21px;
+    }
+
+    .rp-kpi-label {
+        font-size: 12px;
+        color: #74869b;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .rp-kpi-value {
+        font-size: 27px;
+        font-weight: 800;
+        letter-spacing: -.8px;
+        line-height: 1.2;
+        margin-bottom: 15px;
+    }
+
+    .rp-track {
+        height: 8px;
+        width: 100%;
+        background: #eef2f8;
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+    .rp-fill {
+        height: 100%;
+        border-radius: 20px;
+        background: linear-gradient(90deg,#174064,#fd8b00);
+    }
+
+    .rp-kpi-hint {
+        color: #94a2b5;
+        font-size: 11px;
+        margin-top: 12px;
+    }
+
+    .rp-duration-marker {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #6c819b;
+        font-weight: 700;
+        font-size: 12px;
+        min-height: 8px;
+    }
+
+        .rp-duration-marker .material-symbols-outlined {
+            font-size: 18px;
+            color: #d77d00;
+        }
+
+    .rp-summary-band {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 16px 19px;
+        margin-bottom: 23px;
+        border: 1px solid #e2eaf3;
+        border-radius: 13px;
+        background: #f1f6fd;
+    }
+
+    .rp-summary-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 12px;
+        color: #44607e;
+    }
+
+        .rp-summary-pill strong {
+            color: #0b1c30;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .rp-summary-pill .material-symbols-outlined {
+            color: #d77b00;
+            font-size: 18px;
+        }
+
+    .rp-band-divider {
+        height: 23px;
+        width: 1px;
+        background: #d7e3f0;
+        margin: 0 6px;
+    }
+
+    .rp-analytics-grid {
+        display: grid;
+        grid-template-columns: minmax(0,1.45fr) minmax(0,1fr);
+        gap: 18px;
+        margin-bottom: 18px;
+    }
+
+    .rp-panel {
+        padding: 23px;
+    }
+
+    .rp-panel-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 23px;
+    }
+
+    .rp-panel-title {
+        margin: 0 0 6px;
+        font-size: 17px;
+        font-weight: 800;
+        letter-spacing: -.3px;
+    }
+
+    .rp-panel-sub {
+        margin: 0;
+        color: #8999ad;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .rp-tag {
+        background: #f0f5fc;
+        border-radius: 9px;
+        padding: 8px 11px;
+        color: #305376;
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .rp-graph-scroll {
+        overflow-x: auto;
+    }
+
+    .rp-bars {
+        min-width: 380px;
+        height: 252px;
+        display: flex;
+        align-items: stretch;
+        gap: 12px;
+        padding-top: 10px;
+    }
+
+    .rp-bar-item {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        min-width: 0;
+        align-items: center;
+        text-align: center;
+    }
+
+    .rp-bar-value {
+        height: 28px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #365170;
+    }
+
+    .rp-bar-plot {
+        display: flex;
+        flex: 1;
+        align-items: flex-end;
+        justify-content: center;
+        width: 100%;
+        border-bottom: 1px solid #e6edf6;
+        background: repeating-linear-gradient(to top, transparent 0, transparent 43px, #f2f5fa 44px);
+    }
+
+    .rp-bar {
+        width: min(38px,76%);
+        min-height: 0;
+        background: linear-gradient(180deg,#ffb54c,#fd8b00);
+        border-radius: 8px 8px 0 0;
+    }
+
+    .rp-day {
+        font-size: 12px;
+        color: #4c6480;
+        font-weight: 800;
+        margin-top: 12px;
+        text-transform: capitalize;
+    }
+
+    .rp-daydate {
+        color: #9aabc0;
+        font-size: 11px;
+        margin-top: 3px;
+    }
+
+    .rp-status-list {
+        display: grid;
+        gap: 16px;
+    }
+
+    .rp-status-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+        font-size: 12px;
+    }
+
+    .rp-status-name {
+        color: #415872;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .rp-status-number {
+        color: #183752;
+        white-space: nowrap;
+        font-weight: 800;
+    }
+
+        .rp-status-number small {
+            color: #93a2b5;
+            font-weight: 600;
+        }
+
+    .rp-empty {
+        padding: 24px 10px;
+        text-align: center;
+        font-size: 13px;
+        color: #8a9aae;
+    }
+
+    .rp-branch-grid {
+        display: grid;
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 18px;
+        margin-bottom: 18px;
+    }
+
+    .rp-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .rp-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+    }
+
+        .rp-table th {
+            padding: 14px 14px;
+            background: #f8faff;
+            text-transform: uppercase;
+            letter-spacing: .65px;
+            color: #8193a9;
+            font-weight: 800;
+            font-size: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e6ecf4;
+        }
+
+        .rp-table td {
+            padding: 16px 14px;
+            border-bottom: 1px solid #edf1f6;
+            font-size: 12px;
+            color: #2c4561;
+            vertical-align: middle;
+        }
+
+        .rp-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .rp-table tbody tr:hover {
+            background: #fbfcff;
+        }
+
+    .rp-rank {
+        display: inline-grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        background: #edf4fb;
+        border-radius: 8px;
+        color: #285478;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .rp-name {
+        font-weight: 800;
+        color: #213b58;
+    }
+
+    .rp-value {
+        color: #0b1c30;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .rp-mini-track {
+        background: #edf2f8;
+        height: 7px;
+        width: 100%;
+        min-width: 60px;
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+    .rp-mini-fill {
+        height: 100%;
+        background: #fd8b00;
+        border-radius: 20px;
+    }
+
+    .rp-employee-head {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+    }
+
+    .rp-person-icon {
+        display: grid;
+        place-items: center;
+        width: 31px;
+        height: 31px;
+        flex-shrink: 0;
+        background: #eef4fc;
+        color: #315679;
+        border-radius: 9px;
+    }
+
+        .rp-person-icon .material-symbols-outlined {
+            font-size: 19px;
+        }
+
+    .rp-count-good {
+        display: inline-block;
+        color: #117b58;
+        background: #e8f8ef;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-weight: 800;
+    }
+
+    .rp-count-bad {
+        display: inline-block;
+        color: #bf651a;
+        background: #fff1e5;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-weight: 800;
+    }
+
+    .rp-panel-footer {
+        padding: 14px 23px 19px;
+        color: #8c9aae;
+        font-size: 11px;
+        border-top: 1px solid #edf1f6;
+    }
+
+    @@media (max-width:1250px) {
+        .rp-grid4, .rp-kpi-grid {
+            grid-template-columns: repeat(2,minmax(0,1fr));
+        }
+
+        .rp-analytics-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width:850px) {
+        .rp-branch-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width:600px) {
+        .rp-page-heading {
+            align-items: stretch;
+        }
+
+        .rp-heading-actions {
+            width: 100%;
+        }
+
+            .rp-heading-actions .rp-btn {
+                flex: 1;
+            }
+
+        .rp-grid4, .rp-kpi-grid {
+            grid-template-columns: 1fr;
+            gap: 11px;
+        }
+
+        .rp-panel {
+            padding: 18px;
+        }
+
+        .rp-stat {
+            min-height: 145px;
+        }
+
+        .rp-band-divider {
+            display: none;
+        }
+
+        .rp-summary-band {
+            gap: 17px;
+        }
+
+        .rp-table {
+            min-width: 470px;
+        }
+    }
+
+    @@media print {
+        .shell-sidebar, .shell-topbar, .rp-heading-actions {
+            display: none !important;
+        }
+
+        .shell {
+            display: block !important;
+        }
+
+        .shell-main {
+            max-width: none !important;
+            padding: 0 !important;
+        }
+
+        .rp-page {
+            color: #0b1c30;
+        }
+
+        .rp-card {
+            box-shadow: none;
+            break-inside: avoid;
+        }
+
+        .rp-page-heading {
+            margin-top: 0;
+        }
+    }
+</style>
+
+<section class="rp-page">
+    <div class="rp-page-heading">
+        <div>
+            <div class="rp-eyebrow">CARGOTRACK / RAPORLAMA</div>
+            <h1>Operasyon Raporları</h1>
+            <p>Kargo operasyonlarınızın performansını ve dağılımını tek ekranda inceleyin.</p>
+        </div>
+        <div class="rp-heading-actions">
+            <a asp-controller="Dashboard" asp-action="Index" class="rp-btn">
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+                Genel Bakışa Dön
+            </a>
+            <button type="button" class="rp-btn primary" onclick="window.print()">
+                <span class="material-symbols-outlined" aria-hidden="true">print</span>
+                Raporu Yazdır
+            </button>
+        </div>
+    </div>
+
+    <!-- TEMEL İSTATİSTİKLER -->
+    <div class="rp-grid4">
+        <div class="rp-card rp-stat dark">
+            <div class="rp-stat-top">
+                <div class="rp-stat-label">Toplam Kargo</div>
+                <span class="rp-icon"><span class="material-symbols-outlined" aria-hidden="true">inventory_2</span></span>
+            </div>
+            <div>
+                <div class="rp-stat-number">@Model.TotalCargos</div>
+                <p class="rp-stat-note">Sistemde kayıtlı gönderiler</p>
             </div>
         </div>
-
-        <div class="col-md-3">
-            <div class="border rounded p-3">
-                <strong>Aktif Kargo</strong>
-                <h3>@Model.ActiveCargos</h3>
+        <div class="rp-card rp-stat">
+            <div class="rp-stat-top">
+                <div class="rp-stat-label">Aktif Kargo</div>
+                <span class="rp-icon orange"><span class="material-symbols-outlined" aria-hidden="true">local_shipping</span></span>
+            </div>
+            <div>
+                <div class="rp-stat-number">@Model.ActiveCargos</div>
+                <p class="rp-stat-note">Taşıma süreci devam edenler</p>
             </div>
         </div>
-
-        <div class="col-md-3">
-            <div class="border rounded p-3">
-                <strong>Geciken Kargo</strong>
-                <h3>@Model.DelayedCargos</h3>
+        <div class="rp-card rp-stat">
+            <div class="rp-stat-top">
+                <div class="rp-stat-label">Geciken Kargo</div>
+                <span class="rp-icon red"><span class="material-symbols-outlined" aria-hidden="true">schedule</span></span>
+            </div>
+            <div>
+                <div class="rp-stat-number">@Model.DelayedCargos</div>
+                <p class="rp-stat-note">Tahmini teslimat süresi aşılmış</p>
             </div>
         </div>
-
-        <div class="col-md-3">
-            <div class="border rounded p-3">
-                <strong>Teslim Edilen</strong>
-                <h3>@Model.DeliveredCargos</h3>
+        <div class="rp-card rp-stat">
+            <div class="rp-stat-top">
+                <div class="rp-stat-label">Teslim Edilen</div>
+                <span class="rp-icon green"><span class="material-symbols-outlined" aria-hidden="true">task_alt</span></span>
+            </div>
+            <div>
+                <div class="rp-stat-number">@Model.DeliveredCargos</div>
+                <p class="rp-stat-note">Başarıyla tamamlanan teslimatlar</p>
             </div>
         </div>
     </div>
 
-    <h4>Performans Özeti</h4>
-
-    <table class="table table-bordered mb-4">
-        <tbody>
-            <tr>
-                <th>Teslimat Oranı</th>
-                <td>@Model.DeliveryRate.ToString("N1")%</td>
-            </tr>
-            <tr>
-                <th>Zamanında Teslimat Oranı</th>
-                <td>@Model.OnTimeRate.ToString("N1")%</td>
-            </tr>
-            <tr>
-                <th>İade Oranı</th>
-                <td>@Model.ReturnRate.ToString("N1")%</td>
-            </tr>
-            <tr>
-                <th>Ortalama Teslimat Süresi</th>
-                <td>@Model.AverageDeliveryHours.ToString("N1") saat</td>
-            </tr>
-            <tr>
-                <th>Aktif Şube</th>
-                <td>@Model.ActiveBranches</td>
-            </tr>
-            <tr>
-                <th>Aktif Personel</th>
-                <td>@Model.ActiveEmployees</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <h4>Kargo Durum Dağılımı</h4>
-
-    <table class="table table-bordered mb-4">
-        <thead>
-            <tr>
-                <th>Durum</th>
-                <th>Adet</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.StatusDistribution)
-            {
-                <tr>
-                    <td>@item.Status</td>
-                    <td>@item.Count</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-
-    <h4>Son 7 Günlük Kargo Trafiği</h4>
-
-    <table class="table table-bordered mb-4">
-        <thead>
-            <tr>
-                <th>Tarih (UTC)</th>
-                <th>Oluşturulan Kargo</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var day in Model.Last7Days)
-            {
-                <tr>
-                    <td>@day.Date.ToString("dd.MM.yyyy")</td>
-                    <td>@day.Count</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-
-    <div class="row">
-        <div class="col-md-6">
-            <h4>En Fazla Kargo Gönderen Şubeler</h4>
-
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Şube</th>
-                        <th>Adet</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var branch in Model.TopSendingBranches)
-                    {
-                        <tr>
-                            <td>@branch.BranchName</td>
-                            <td>@branch.Count</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+    <!-- PERFORMANS -->
+    <div class="rp-section-label">
+        <h2>Performans Göstergeleri</h2>
+        <span>Mevcut raporlama verileri</span>
+    </div>
+    <div class="rp-kpi-grid">
+        <div class="rp-card rp-kpi">
+            <div class="rp-kpi-label">Teslimat Oranı</div>
+            <div class="rp-kpi-value">@(Model.DeliveryRate.ToString("N1"))%</div>
+            <div class="rp-track"><div class="rp-fill" style="width:@(deliveryBar)%"></div></div>
+            <div class="rp-kpi-hint">Başarıyla sonuçlanan teslimatlar</div>
         </div>
-
-        <div class="col-md-6">
-            <h4>En Fazla Teslimat Yapan Şubeler</h4>
-
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Şube</th>
-                        <th>Adet</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var branch in Model.TopDeliveringBranches)
-                    {
-                        <tr>
-                            <td>@branch.BranchName</td>
-                            <td>@branch.Count</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+        <div class="rp-card rp-kpi">
+            <div class="rp-kpi-label">Zamanında Teslimat Oranı</div>
+            <div class="rp-kpi-value">@(Model.OnTimeRate.ToString("N1"))%</div>
+            <div class="rp-track"><div class="rp-fill" style="width:@(onTimeBar)%"></div></div>
+            <div class="rp-kpi-hint">Hedeflenen sürede gerçekleşenler</div>
+        </div>
+        <div class="rp-card rp-kpi">
+            <div class="rp-kpi-label">İade Oranı</div>
+            <div class="rp-kpi-value">@(Model.ReturnRate.ToString("N1"))%</div>
+            <div class="rp-track"><div class="rp-fill" style="width:@(returnBar)%"></div></div>
+            <div class="rp-kpi-hint">Göndericiye geri dönen kargolar</div>
+        </div>
+        <div class="rp-card rp-kpi">
+            <div class="rp-kpi-label">Ortalama Teslimat Süresi</div>
+            <div class="rp-kpi-value">@(Model.AverageDeliveryHours.ToString("N1")) <span style="font-size:14px; font-weight:700; color:#8393a8">saat</span></div>
+            <div class="rp-duration-marker"><span class="material-symbols-outlined" aria-hidden="true">schedule</span> Zaman ölçümü</div>
+            <div class="rp-kpi-hint">Raporlanan teslimatların ortalaması</div>
         </div>
     </div>
 
-    <h4>Personel Performansı</h4>
+    <div class="rp-summary-band" aria-label="Operasyon kapasitesi">
+        <div class="rp-summary-pill">
+            <span class="material-symbols-outlined" aria-hidden="true">storefront</span>
+            Aktif Şube: <strong>@Model.ActiveBranches</strong>
+        </div>
+        <span class="rp-band-divider" aria-hidden="true"></span>
+        <div class="rp-summary-pill">
+            <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+            Aktif Personel: <strong>@Model.ActiveEmployees</strong>
+        </div>
+        <span class="rp-band-divider" aria-hidden="true"></span>
+        <div class="rp-summary-pill">
+            <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+            Son 7 Gün Oluşturulan Kargo: <strong>@weekTotal</strong>
+        </div>
+    </div>
 
-    <table class="table table-bordered mb-4">
-        <thead>
-            <tr>
-                <th>Personel</th>
-                <th>Başarılı Teslimat</th>
-                <th>Başarısız Deneme</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var employee in Model.EmployeePerformance)
+    <!-- GRAFİKLER -->
+    <div class="rp-analytics-grid">
+        <div class="rp-card rp-panel">
+            <div class="rp-panel-head">
+                <div>
+                    <h2 class="rp-panel-title">Son 7 Günlük Kargo Trafiği</h2>
+                    <p class="rp-panel-sub">Günlere göre oluşturulan kargo sayısı (UTC)</p>
+                </div>
+                <span class="rp-tag">Toplam: @weekTotal</span>
+            </div>
+            @if (!Model.Last7Days.Any())
             {
-                <tr>
-                    <td>@employee.EmployeeName</td>
-                    <td>@employee.DeliveredCount</td>
-                    <td>@employee.FailedCount</td>
-                </tr>
+                <div class="rp-empty">Henüz günlük kargo verisi bulunmuyor.</div>
             }
-        </tbody>
-    </table>
+            else
+            {
+                <div class="rp-graph-scroll">
+                    <div class="rp-bars" role="img" aria-label="Son yedi günün kargo oluşturma adetleri">
+                        @foreach (var day in Model.Last7Days.OrderBy(x => x.Date))
+                        {
+                            var height = (day.Count * 100.0 / dailyMax).ToString("0.##", invariant);
+                            <div class="rp-bar-item">
+                                <div class="rp-bar-value">@day.Count</div>
+                                <div class="rp-bar-plot">
+                                    <div class="rp-bar" style="height:@(height)%" title="@(day.Date.ToString("dd.MM.yyyy", tr)): @day.Count kargo"></div>
+                                </div>
+                                <div class="rp-day">@(day.Date.ToString("ddd", tr))</div>
+                                <div class="rp-daydate">@(day.Date.ToString("dd.MM", tr))</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
 
-    <a asp-controller="Dashboard"
-       asp-action="Index">
-        Dashboard'a Dön
-    </a>
+        <div class="rp-card rp-panel">
+            <div class="rp-panel-head">
+                <div>
+                    <h2 class="rp-panel-title">Kargo Durum Dağılımı</h2>
+                    <p class="rp-panel-sub">Sistemdeki gönderilerin güncel durumları</p>
+                </div>
+                <span class="rp-tag">@statusTotal Kargo</span>
+            </div>
+            @if (!Model.StatusDistribution.Any())
+            {
+                <div class="rp-empty">Henüz durum dağılımı bulunmuyor.</div>
+            }
+            else
+            {
+                <div class="rp-status-list">
+                    @foreach (var item in Model.StatusDistribution.OrderByDescending(x => x.Count))
+                    {
+                        var statusLabel = item.Status.ToString() switch
+                        {
+                            "Created" => "Oluşturuldu",
+                            "AtOriginBranch" => "Çıkış Şubesinde",
+                            "AtTransferCenter" => "Transfer Merkezinde",
+                            "AtDestinationBranch" => "Varış Şubesinde",
+                            "OutForDelivery" => "Dağıtıma Çıktı",
+                            "Delivered" => "Teslim Edildi",
+                            "DeliveryFailed" => "Teslim Edilemedi",
+                            "ReturnInProgress" => "İade Sürecinde",
+                            "ReturnedToSender" => "İade Edildi",
+                            _ => item.Status.ToString()
+                        };
+                        var ratio = statusTotal > 0 ? item.Count * 100.0 / statusTotal : 0;
+                        var ratioCss = ratio.ToString("0.##", invariant);
+                        <div>
+                            <div class="rp-status-top">
+                                <span class="rp-status-name">@statusLabel</span>
+                                <span class="rp-status-number">@item.Count <small>(@(ratio.ToString("N1", tr))%)</small></span>
+                            </div>
+                            <div class="rp-track"><div class="rp-fill" style="width:@(ratioCss)%"></div></div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
 
-</div>
+    <!-- ŞUBELER -->
+    <div class="rp-branch-grid">
+        <div class="rp-card">
+            <div class="rp-panel">
+                <div class="rp-panel-head">
+                    <div>
+                        <h2 class="rp-panel-title">En Fazla Kargo Gönderen Şubeler</h2>
+                        <p class="rp-panel-sub">Gönderi adedine göre sıralama</p>
+                    </div>
+                    <span class="rp-tag">İlk 5</span>
+                </div>
+            </div>
+            @if (!Model.TopSendingBranches.Any())
+            {
+                <div class="rp-empty">Şube gönderim verisi bulunmuyor.</div>
+            }
+            else
+            {
+                <div class="rp-table-wrap">
+                    <table class="rp-table">
+                        <thead><tr><th style="width:54px">#</th><th>Şube</th><th>Adet</th><th style="width:28%">Dağılım</th></tr></thead>
+                        <tbody>
+                            @{
+                                var sendRank = 0;
+                            }
+                            @foreach (var branch in Model.TopSendingBranches)
+                            {
+                                sendRank++;
+                                var width = (branch.Count * 100.0 / sendingMax).ToString("0.##", invariant);
+                                <tr>
+                                    <td><span class="rp-rank">@sendRank</span></td>
+                                    <td class="rp-name">@branch.BranchName</td>
+                                    <td class="rp-value">@branch.Count</td>
+                                    <td><div class="rp-mini-track"><div class="rp-mini-fill" style="width:@(width)%"></div></div></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="rp-card">
+            <div class="rp-panel">
+                <div class="rp-panel-head">
+                    <div>
+                        <h2 class="rp-panel-title">En Fazla Teslimat Yapan Şubeler</h2>
+                        <p class="rp-panel-sub">Başarılı teslimat sayısına göre sıralama</p>
+                    </div>
+                    <span class="rp-tag">İlk 5</span>
+                </div>
+            </div>
+            @if (!Model.TopDeliveringBranches.Any())
+            {
+                <div class="rp-empty">Şube teslimat verisi bulunmuyor.</div>
+            }
+            else
+            {
+                <div class="rp-table-wrap">
+                    <table class="rp-table">
+                        <thead><tr><th style="width:54px">#</th><th>Şube</th><th>Adet</th><th style="width:28%">Dağılım</th></tr></thead>
+                        <tbody>
+                            @{
+                                var deliveryRank = 0;
+                            }
+                            @foreach (var branch in Model.TopDeliveringBranches)
+                            {
+                                deliveryRank++;
+                                var width = (branch.Count * 100.0 / deliveringMax).ToString("0.##", invariant);
+                                <tr>
+                                    <td><span class="rp-rank">@deliveryRank</span></td>
+                                    <td class="rp-name">@branch.BranchName</td>
+                                    <td class="rp-value">@branch.Count</td>
+                                    <td><div class="rp-mini-track"><div class="rp-mini-fill" style="width:@(width)%"></div></div></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- PERSONEL -->
+    <div class="rp-card">
+        <div class="rp-panel">
+            <div class="rp-panel-head">
+                <div>
+                    <h2 class="rp-panel-title">Personel Performansı</h2>
+                    <p class="rp-panel-sub">Çalışan bazında başarılı teslimatlar ve başarısız denemeler</p>
+                </div>
+                <span class="rp-tag">@Model.EmployeePerformance.Count() Personel</span>
+            </div>
+        </div>
+        @if (!Model.EmployeePerformance.Any())
+        {
+            <div class="rp-empty">Henüz personel performans kaydı bulunmuyor.</div>
+        }
+        else
+        {
+            <div class="rp-table-wrap">
+                <table class="rp-table">
+                    <thead><tr><th>Personel</th><th>Başarılı Teslimat</th><th>Başarısız Deneme</th></tr></thead>
+                    <tbody>
+                        @foreach (var employee in Model.EmployeePerformance)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="rp-employee-head">
+                                        <span class="rp-person-icon"><span class="material-symbols-outlined" aria-hidden="true">person</span></span>
+                                        <span class="rp-name">@employee.EmployeeName</span>
+                                    </div>
+                                </td>
+                                <td><span class="rp-count-good">@employee.DeliveredCount</span></td>
+                                <td><span class="rp-count-bad">@employee.FailedCount</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        <div class="rp-panel-footer">Bu raporda gösterilen bilgiler CargoTrack raporlama servisinden alınır.</div>
+    </div>
+</section>
+

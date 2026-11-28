@@ -2,435 +2,213 @@
 @model List<CargoTrack.DTO.CargoDtos.CargoListDto>
 
 @{
-    Layout = null;
-
-    var title = ViewData["PageTitle"]?.ToString()
-        ?? "CargoTrack Panel";
+    Layout = "~/Views/Shared/_PanelLayout.cshtml";
+    ViewData["Title"] = "Genel Bakış";
 
     bool isAdmin = User.IsInRole("Admin");
     bool isManager = User.IsInRole("Manager");
+    bool isUser = User.IsInRole("User");
+
+    var roleName = isAdmin ? "Sistem Yöneticisi"
+        : isManager ? "Şube Yöneticisi"
+        : isUser ? "Müşteri" : "Kullanıcı";
+
+    var accountName = User.Identity?.Name ?? "Kullanıcı";
+}
+<div class="shell-page-bar">
+    <p class="shell-welcome">Hoş geldiniz, @accountName</p>
+    <span class="shell-role-pill">
+        <span class="material-symbols-outlined">verified_user</span>
+        @roleName
+    </span>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="shell-alert success" role="status">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="shell-alert error" role="alert">@TempData["Error"]</div>
 }
 
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="utf-8" />
+<!-- VAR OLAN VIEWCOMPONENT VERİ BAĞLANTILARI -->
+@if (isAdmin)
+{
+    @await Component.InvokeAsync("AdminDashboard")
+}
+@if (isManager)
+{
+    @await Component.InvokeAsync("ManagerDashboard")
+}
+@if (isUser)
+{
+    @await Component.InvokeAsync("UserDashboard")
+}
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1" />
-
-    <title>@title - CargoTrack</title>
-
-    <style>
-            body {
-                font-family: Arial, sans-serif;
-                background: #f3f5fa;
-                margin: 0;
-                color: #14253d;
-            }
-
-            header {
-                background: #14253d;
-                color: white;
-                padding: 20px 5%;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            main {
-                margin: 40px auto;
-                max-width: 1100px;
-                padding: 0 20px;
-            }
-
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                background: white;
-            }
-
-            th, td {
-                padding: 14px;
-                text-align: left;
-                border-bottom: 1px solid #e2e6ed;
-            }
-
-            th {
-                background: #eaf0f8;
-            }
-
-            button {
-                background: #ff9100;
-                border: none;
-                padding: 10px 18px;
-                cursor: pointer;
-                border-radius: 6px;
-            }
-
-            .empty {
-                background: white;
-                padding: 30px;
-                border-radius: 10px;
-            }
-
-            .create-link {
-                display: inline-block;
-                background: #ff9100;
-                color: #14253d;
-                padding: 12px 18px;
-                border-radius: 6px;
-                text-decoration: none;
-                margin: 15px 0;
-                font-weight: bold;
-            }
-
-            .status-link {
-                display: inline-block;
-                background: #14253d;
-                color: white;
-                padding: 9px 12px;
-                border-radius: 6px;
-                text-decoration: none;
-                font-size: 13px;
-                white-space: nowrap;
-            }
-
-            .edit-link {
-                display: inline-block;
-                background: #198754;
-                color: white;
-                padding: 9px 12px;
-                border-radius: 6px;
-                text-decoration: none;
-                font-size: 13px;
-                white-space: nowrap;
-            }
-
-            .delete-btn {
-                background: #dc3545;
-                color: white;
-                padding: 9px 12px;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 13px;
-            }
-
-            .detail-link {
-                display: inline-block;
-                background: #eaf0f8;
-                color: #14253d;
-                padding: 9px 12px;
-                border-radius: 6px;
-                text-decoration: none;
-                font-size: 13px;
-            }
-
-            .success {
-                color: green;
-                margin: 15px 0;
-            }
-
-            .error {
-                color: red;
-                margin: 15px 0;
-            }
-
-            .table-container {
-                overflow-x: auto;
-            }
-
-            .action-buttons {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                flex-wrap: wrap;
-            }
-
-                .action-buttons form {
-                    margin: 0;
-                }
-    </style>
-</head>
-
-<body>
-
-    <header>
-        <strong>CargoTrack</strong>
-
-        <form asp-controller="Account"
-              asp-action="Logout"
-              method="post">
-
-            @Html.AntiForgeryToken()
-
-            <button type="submit">
-                Çıkış Yap
-            </button>
-
-        </form>
-    </header>
-
-    <main>
-
-        <h1>@title</h1>
-
-        <p>
-            Hoş geldiniz, @User.Identity?.Name
-        </p>
-
-     
-        @if (User.IsInRole("Admin"))
-        {
-            @await Component.InvokeAsync("AdminDashboard")
-        }
-
-        @if (User.IsInRole("Manager"))
-        {
-            @await Component.InvokeAsync("ManagerDashboard")
-        }
-
-        @if (User.IsInRole("User"))
-        {
-            @await Component.InvokeAsync("UserDashboard")
-        }
-
-
-        @if (TempData["Success"] != null)
-        {
-            <p class="success">
-                @TempData["Success"]
-            </p>
-        }
-
-        @if (TempData["Error"] != null)
-        {
-            <p class="error">
-                @TempData["Error"]
-            </p>
-        }
-
-        @if (isAdmin)
-        {
-            <a asp-controller="AdminCargos"
-               asp-action="Create"
-               class="create-link">
-
-                + Yeni Kargo Oluştur
-
-            </a>
-
-            <a asp-controller="AdminCargos"
-               asp-action="Index"
-               class="create-link">
-
-                Kargo Yönetimi
-
-            </a>
-
-            <a asp-controller="AdminAuditLogs"
-               asp-action="Index"
-               class="create-link">
-                İşlem Kayıtları
-            </a>
-
-            <a asp-controller="AdminReports"
-               asp-action="Index"
-               class="create-link">
-                Operasyon Raporları
-            </a>
-
-        }
-
-        @if (isManager)
-        {
-            <a asp-controller="ManagerCargos"
-               asp-action="Index"
-               class="create-link">
-
-                Şube Kargo Yönetimi
-
-            </a>
-        }
-
+<!-- KARGO LİSTESİ -->
+<div class="shell-section-head">
+    <div>
         <h2>Kargo Listesi</h2>
+        <p>Gönderilerin güncel durumunu ve işlem seçeneklerini görüntüleyin.</p>
+    </div>
+    @if (isAdmin)
+    {
+        <a asp-controller="AdminCargos" asp-action="Create" class="shell-button-primary">
+            <span class="material-symbols-outlined">add</span>
+            Yeni Kargo Oluştur
+        </a>
+    }
+    else if (isManager)
+    {
+        <a asp-controller="ManagerCargos" asp-action="Index" class="shell-button-primary">
+            <span class="material-symbols-outlined">local_shipping</span>
+            Şube Kargoları
+        </a>
+    }
+</div>
 
-        @if (Model == null || Model.Count == 0)
-        {
-            <div class="empty">
-                Henüz görüntülenecek kargo bulunmuyor.
-            </div>
-        }
-        else
-        {
-            <div class="table-container">
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Takip Numarası</th>
-                            <th>Durum</th>
-                            <th>Çıkış Şubesi</th>
-                            <th>Varış Şubesi</th>
-                            <th>Tarih</th>
-
-                            @if (isAdmin || isManager)
-                            {
-                                <th>İşlemler</th>
-                            }
-                        </tr>
-                    </thead>
-
-                    <tbody>
-
-                        @foreach (var cargo in Model)
+<div class="shell-table-card">
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="shell-empty">
+            <div><span class="material-symbols-outlined">inventory_2</span></div>
+            Henüz görüntülenecek kargo bulunmuyor.
+        </div>
+    }
+    else
+    {
+        <div class="shell-table-scroll">
+            <table class="shell-shipment-table">
+                <thead>
+                    <tr>
+                        <th>TAKİP NUMARASI</th>
+                        <th>DURUM</th>
+                        <th>ÇIKIŞ ŞUBESİ</th>
+                        <th>VARIŞ ŞUBESİ</th>
+                        <th>TARİH</th>
+                        @if (isAdmin || isManager)
                         {
-                            bool isCompleted =
-                                cargo.Status == CargoStatus.Delivered ||
-                                cargo.Status == CargoStatus.ReturnedToSender;
+                            <th>İŞLEMLER</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cargo in Model)
+                    {
+                        bool isCompleted =
+                            cargo.Status == CargoStatus.Delivered ||
+                            cargo.Status == CargoStatus.ReturnedToSender;
 
-                            <tr>
+                        string statusText = cargo.Status switch
+                        {
+                            CargoStatus.Created => "Oluşturuldu",
+                            CargoStatus.AtOriginBranch => "Çıkış Şubesinde",
+                            CargoStatus.AtTransferCenter => "Transfer Merkezinde",
+                            CargoStatus.AtDestinationBranch => "Varış Şubesinde",
+                            CargoStatus.OutForDelivery => "Dağıtımda",
+                            CargoStatus.Delivered => "Teslim Edildi",
+                            CargoStatus.DeliveryFailed => "Teslim Edilemedi",
+                            CargoStatus.ReturnInProgress => "İade Sürecinde",
+                            CargoStatus.ReturnedToSender => "İade Edildi",
+                            _ => cargo.Status.ToString()
+                        };
 
-                                <td>
-                                    @if (isAdmin)
-                                    {
-                                        <a asp-controller="AdminCargos"
-                                           asp-action="Details"
-                                           asp-route-id="@cargo.Id">
+                        string statusClass = cargo.Status switch
+                        {
+                            CargoStatus.Delivered => "done",
+                            CargoStatus.ReturnedToSender => "returned",
+                            CargoStatus.DeliveryFailed => "failed",
+                            _ => ""
+                        };
 
-                                            @cargo.TrackingNumber
-
-                                        </a>
-                                    }
-                                    else if (User.IsInRole("User"))
-                                    {
-                                        <a asp-controller="UserCargos"
-                                           asp-action="Details"
-                                           asp-route-id="@cargo.Id">
-                                            @cargo.TrackingNumber
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        @cargo.TrackingNumber
-                                    }
-                                </td>
-
-                                <td>
-                                    @cargo.Status
-                                </td>
-
-                                <td>
-                                    @cargo.OriginBranchName
-                                </td>
-
-                                <td>
-                                    @cargo.DestinationBranchName
-                                </td>
-
-                                <td>
-                                    @cargo.CreatedDate.ToString("dd.MM.yyyy")
-                                </td>
-
+                        <tr>
+                            <td>
                                 @if (isAdmin)
                                 {
-                                    <td>
-                                        <div class="action-buttons">
-
-                                            <a asp-controller="AdminCargos"
-                                               asp-action="Details"
-                                               asp-route-id="@cargo.Id"
-                                               class="detail-link">
-
-                                                Detay
-
-                                            </a>
-
-                                            @if (!isCompleted)
-                                            {
-                                                <a asp-controller="AdminCargos"
-                                                   asp-action="Status"
-                                                   asp-route-id="@cargo.Id"
-                                                   class="status-link">
-
-                                                    Durumu Değiştir
-
-                                                </a>
-                                            }
-
-                                            @if (cargo.Status == CargoStatus.Created)
-                                            {
-                                                <a asp-controller="AdminCargos"
-                                                   asp-action="Edit"
-                                                   asp-route-id="@cargo.Id"
-                                                   class="edit-link">
-
-                                                    Güncelle
-
-                                                </a>
-
-                                                <form asp-controller="AdminCargos"
-                                                      asp-action="Delete"
-                                                      method="post"
-                                                      onsubmit="return confirm('Bu kargoyu silmek istediğinize emin misiniz?');">
-
-                                                    @Html.AntiForgeryToken()
-
-                                                    <input type="hidden"
-                                                           name="id"
-                                                           value="@cargo.Id" />
-
-                                                    <button type="submit"
-                                                            class="delete-btn">
-
-                                                        Sil
-
-                                                    </button>
-
-                                                </form>
-                                            }
-
-                                        </div>
-                                    </td>
+                                    <a asp-controller="AdminCargos"
+                                       asp-action="Details"
+                                       asp-route-id="@cargo.Id"
+                                       class="shell-tracking-link">@cargo.TrackingNumber</a>
                                 }
-                                else if (isManager)
+                                else if (isUser)
                                 {
-                                    <td>
-                                        <div class="action-buttons">
-
-                                            @if (!isCompleted)
-                                            {
-                                                <a asp-controller="ManagerCargos"
-                                                   asp-action="Status"
-                                                   asp-route-id="@cargo.Id"
-                                                   class="status-link">
-
-                                                    Durumu Değiştir
-
-                                                </a>
-                                            }
-                                            else
-                                            {
-                                                <span>
-                                                    İşlem tamamlandı
-                                                </span>
-                                            }
-
-                                        </div>
-                                    </td>
+                                    <a asp-controller="UserCargos"
+                                       asp-action="Details"
+                                       asp-route-id="@cargo.Id"
+                                       class="shell-tracking-link">@cargo.TrackingNumber</a>
                                 }
+                                else
+                                {
+                                    <strong>@cargo.TrackingNumber</strong>
+                                }
+                            </td>
+                            <td>
+                                <span class="shell-status @statusClass">@statusText</span>
+                            </td>
+                            <td>@cargo.OriginBranchName</td>
+                            <td>@cargo.DestinationBranchName</td>
+                            <td>@(cargo.CreatedDate.ToString("dd.MM.yyyy"))</td>
 
-                            </tr>
-                        }
+                            @if (isAdmin)
+                            {
+                                <td>
+                                    <div class="shell-actions">
+                                        <a asp-controller="AdminCargos"
+                                           asp-action="Details"
+                                           asp-route-id="@cargo.Id"
+                                           class="shell-action">Detay</a>
 
-                    </tbody>
-                </table>
+                                        @if (!isCompleted)
+                                        {
+                                            <a asp-controller="AdminCargos"
+                                               asp-action="Status"
+                                               asp-route-id="@cargo.Id"
+                                               class="shell-action">Durum</a>
+                                        }
 
-            </div>
-        }
+                                        @if (cargo.Status == CargoStatus.Created)
+                                        {
+                                            <a asp-controller="AdminCargos"
+                                               asp-action="Edit"
+                                               asp-route-id="@cargo.Id"
+                                               class="shell-action edit">Güncelle</a>
 
-    </main>
+                                            <form asp-controller="AdminCargos"
+                                                  asp-action="Delete"
+                                                  method="post"
+                                                  onsubmit="return confirm('Bu kargoyu silmek istediğinize emin misiniz?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@cargo.Id" />
+                                                <button type="submit" class="shell-action delete">Sil</button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            }
+                            else if (isManager)
+                            {
+                                <td>
+                                    <div class="shell-actions">
+                                        @if (!isCompleted)
+                                        {
+                                            <a asp-controller="ManagerCargos"
+                                               asp-action="Status"
+                                               asp-route-id="@cargo.Id"
+                                               class="shell-action">Durumu Değiştir</a>
+                                        }
+                                        else
+                                        {
+                                            <span style="color:#8090a4;font-size:12px">İşlem tamamlandı</span>
+                                        }
+                                    </div>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
 
-</body>
-</html>

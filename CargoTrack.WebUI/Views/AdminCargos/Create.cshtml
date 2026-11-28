@@ -2,169 +2,852 @@
 @model CargoTrack.WebUI.Models.AdminCargoCreateVm
 
 @{
+    Layout = "_PanelLayout";
     ViewData["Title"] = "Yeni Kargo Oluştur";
+
     bool missingData = Model.Customers.Count < 2
         || Model.Branches.Count < 2
         || Model.Addresses.Count == 0;
 }
 
-<div class="container py-4">
-    <h2>Yeni Kargo Oluştur</h2>
+<style>
+    .create-page {
+        color: #0b1c30;
+    }
 
-    <p>Gönderici, alıcı, şube ve kargo bilgilerini seçiniz.</p>
+        .create-page * {
+            box-sizing: border-box;
+        }
 
-    <div asp-validation-summary="All" class="text-danger"></div>
+    .create-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 18px;
+        margin: 5px 0 28px;
+    }
+
+    .create-eyebrow {
+        color: #e78300;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        margin-bottom: 10px;
+    }
+
+    .create-heading h1 {
+        font-size: clamp(26px, 3vw, 34px);
+        font-weight: 800;
+        letter-spacing: -1.1px;
+        margin: 0 0 8px;
+    }
+
+    .create-heading p {
+        margin: 0;
+        color: #8090a5;
+        font-size: 14px;
+    }
+
+    .create-back {
+        display: inline-flex;
+        gap: 7px;
+        align-items: center;
+        padding: 11px 16px;
+        background: white;
+        border: 1px solid #e2e9f2;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #35516e;
+        text-decoration: none;
+    }
+
+        .create-back:hover {
+            background: #f1f5fa;
+            color: #193751;
+        }
+
+        .create-back .material-symbols-outlined {
+            font-size: 18px;
+        }
+
+    .create-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background: #fff7eb;
+        border: 1px solid #f6d5a2;
+        color: #865210;
+        padding: 15px 18px;
+        border-radius: 12px;
+        font-size: 13px;
+        margin-bottom: 22px;
+    }
+
+        .create-alert .material-symbols-outlined {
+            font-size: 21px;
+            flex-shrink: 0;
+        }
+
+    .create-validation {
+        margin-bottom: 18px;
+    }
+
+        .create-validation.validation-summary-valid {
+            display: none;
+        }
+
+        .create-validation.validation-summary-errors {
+            background: #fff1f1;
+            color: #a52c35;
+            border: 1px solid #f7caca;
+            padding: 13px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+        }
+
+        .create-validation ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+    .create-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.58fr) minmax(285px, .8fr);
+        gap: 22px;
+        align-items: start;
+    }
+
+    .create-left {
+        display: grid;
+        gap: 19px;
+        min-width: 0;
+    }
+
+    .create-card {
+        background: white;
+        border: 1px solid #e2e9f3;
+        border-radius: 17px;
+        overflow: hidden;
+        box-shadow: 0 5px 19px rgba(12,32,55,.035);
+    }
+
+    .create-card-head {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        padding: 22px 24px 18px;
+        border-bottom: 1px solid #edf1f6;
+    }
+
+    .create-card-icon {
+        height: 42px;
+        width: 42px;
+        flex: 0 0 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        color: #d67b05;
+        background: #fff2e2;
+    }
+
+        .create-card-icon .material-symbols-outlined {
+            font-size: 22px;
+        }
+
+    .create-card-head h2 {
+        font-size: 17px;
+        font-weight: 800;
+        margin: 0 0 5px;
+    }
+
+    .create-card-head p {
+        font-size: 12px;
+        margin: 0;
+        color: #8796aa;
+    }
+
+    .create-card-body {
+        padding: 23px 24px 24px;
+    }
+
+    .create-fields {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 19px;
+    }
+
+    .create-field {
+        min-width: 0;
+    }
+
+        .create-field.full {
+            grid-column: 1 / -1;
+        }
+
+    .create-label {
+        display: block;
+        color: #314760;
+        font-size: 12px;
+        font-weight: 800;
+        margin-bottom: 9px;
+    }
+
+    .create-select, .create-input {
+        display: block;
+        width: 100%;
+        height: 49px;
+        color: #19344f;
+        background: #fff;
+        border: 1px solid #dfe7f1;
+        border-radius: 10px;
+        padding: 0 13px;
+        font-size: 13px;
+        font-family: inherit;
+        outline: none;
+    }
+
+        .create-select:focus, .create-input:focus {
+            border-color: #fd8b00;
+            box-shadow: 0 0 0 3px rgba(253,139,0,.12);
+        }
+
+        .create-select.input-validation-error, .create-input.input-validation-error {
+            border-color: #dc5b5b;
+        }
+
+    .create-help {
+        color: #94a2b4;
+        margin: 7px 0 0;
+        font-size: 11px;
+        line-height: 1.55;
+    }
+
+    .create-field .field-validation-error {
+        display: block;
+        margin-top: 6px;
+        font-size: 11px;
+        color: #c43d42;
+    }
+
+    .create-inline-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #788ca2;
+        background: #f6f9fd;
+        padding: 12px 14px;
+        border-radius: 10px;
+        font-size: 12px;
+        margin-top: 18px;
+    }
+
+        .create-inline-info .material-symbols-outlined {
+            font-size: 19px;
+            color: #6687aa;
+        }
+
+    .create-service-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .create-service {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        cursor: pointer;
+        padding: 15px 13px;
+        border-radius: 12px;
+        border: 1px solid #e2e9f3;
+        background: #fcfdff;
+        min-width: 0;
+    }
+
+        .create-service:has(input:checked) {
+            background: #fff6e9;
+            border-color: #fbb65f;
+        }
+
+        .create-service input {
+            flex: 0 0 auto;
+            width: 17px;
+            height: 17px;
+            accent-color: #fd8b00;
+            margin: 1px 0 0;
+        }
+
+        .create-service strong {
+            display: block;
+            font-size: 12px;
+            font-weight: 800;
+            color: #1c3550;
+            margin-bottom: 4px;
+        }
+
+        .create-service small {
+            display: block;
+            font-size: 11px;
+            line-height: 1.45;
+            color: #8b9caf;
+        }
+
+    .create-fragile {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 17px 16px;
+        border: 1px solid #f1dabb;
+        background: #fffaf2;
+        border-radius: 12px;
+        margin-top: 17px;
+        cursor: pointer;
+    }
+
+        .create-fragile input {
+            width: 19px;
+            height: 19px;
+            accent-color: #fd8b00;
+            margin: 0;
+            flex: 0 0 auto;
+        }
+
+        .create-fragile .material-symbols-outlined {
+            color: #d88117;
+            font-size: 22px;
+        }
+
+        .create-fragile strong {
+            display: block;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .create-fragile small {
+            display: block;
+            font-size: 11px;
+            color: #957e65;
+            margin-top: 4px;
+        }
+
+    .create-side {
+        position: sticky;
+        top: 25px;
+        min-width: 0;
+    }
+
+    .create-summary {
+        background: #fff;
+        border: 1px solid #e2e9f3;
+        border-radius: 17px;
+        overflow: hidden;
+        box-shadow: 0 5px 19px rgba(12,32,55,.035);
+    }
+
+    .create-summary-head {
+        padding: 23px 24px;
+        background: linear-gradient(145deg, #0b1c30, #1c3858);
+        color: #fff;
+    }
+
+    .create-summary-overline {
+        color: #ffad42;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        margin: 0 0 9px;
+    }
+
+    .create-summary-head h2 {
+        font-size: 19px;
+        font-weight: 800;
+        margin: 0 0 8px;
+    }
+
+    .create-summary-head p {
+        margin: 0;
+        color: #bfd1e4;
+        font-size: 12px;
+        line-height: 1.65;
+    }
+
+    .create-summary-body {
+        padding: 23px 24px;
+    }
+
+    .create-route {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 37px minmax(0, 1fr);
+        gap: 7px;
+        align-items: center;
+        margin-bottom: 22px;
+    }
+
+    .create-route-node {
+        min-width: 0;
+    }
+
+        .create-route-node small {
+            display: block;
+            font-size: 10px;
+            color: #8b9caf;
+            margin-bottom: 6px;
+        }
+
+        .create-route-node strong {
+            display: block;
+            font-size: 12px;
+            color: #1c3654;
+            overflow-wrap: anywhere;
+        }
+
+    .create-route-arrow {
+        text-align: center;
+        color: #fd8b00;
+        font-size: 19px;
+    }
+
+    .create-summary-divider {
+        height: 1px;
+        background: #ebf0f6;
+        margin: 20px 0;
+    }
+
+    .create-summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+        .create-summary-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .create-summary-row span {
+            font-size: 12px;
+            color: #7e8fa3;
+        }
+
+        .create-summary-row strong {
+            color: #284563;
+            font-size: 12px;
+            font-weight: 800;
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+
+    .create-price-note {
+        display: flex;
+        gap: 9px;
+        align-items: flex-start;
+        background: #f1f6fd;
+        padding: 13px;
+        border-radius: 10px;
+        color: #5b7390;
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+        .create-price-note .material-symbols-outlined {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+    .create-actions {
+        display: grid;
+        gap: 11px;
+        margin-top: 22px;
+    }
+
+    .create-submit {
+        height: 51px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        background: #fd8b00;
+        color: #12253b;
+        font-weight: 800;
+        font-size: 13px;
+        border: none;
+        border-radius: 11px;
+        cursor: pointer;
+    }
+
+        .create-submit:hover:not(:disabled) {
+            background: #ffab35;
+        }
+
+        .create-submit:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .create-submit .material-symbols-outlined {
+            font-size: 20px;
+        }
+
+    .create-cancel {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: #536a84;
+        font-size: 12px;
+        font-weight: 800;
+        padding: 11px;
+        border-radius: 10px;
+        border: 1px solid #e1e8f1;
+        background: #fff;
+    }
+
+        .create-cancel:hover {
+            background: #f3f7fc;
+            color: #183853;
+        }
+
+    .create-side-foot {
+        margin: 14px 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        font-size: 11px;
+        color: #9aa8b8;
+        text-align: center;
+    }
+
+        .create-side-foot .material-symbols-outlined {
+            font-size: 15px;
+        }
+
+    @@media (max-width: 1190px) {
+        .create-layout {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .create-side {
+            position: static;
+        }
+    }
+
+    @@media (max-width: 700px) {
+        .create-heading {
+            margin-bottom: 20px;
+        }
+
+        .create-back {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .create-card-head {
+            padding: 18px;
+        }
+
+        .create-card-body {
+            padding: 18px;
+        }
+
+        .create-summary-head, .create-summary-body {
+            padding: 20px;
+        }
+
+        .create-fields {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .create-service-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="create-page">
+    <div class="create-heading">
+        <div>
+            <div class="create-eyebrow">CARGOTRACK / GÖNDERİ İŞLEMLERİ</div>
+            <h1>Yeni Kargo Oluştur</h1>
+            <p>Gönderi bilgilerini tamamlayarak yeni bir kargo kaydı oluşturun.</p>
+        </div>
+        <a asp-controller="AdminCargos" asp-action="Index" class="create-back">
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            Kargo Yönetimine Dön
+        </a>
+    </div>
+
+    <div asp-validation-summary="All" class="create-validation" role="alert"></div>
 
     @if (missingData)
     {
-        <div class="alert alert-warning">
-            Kargo oluşturabilmek için en az 2 müşteri,
-            2 aktif şube ve 1 teslimat adresi gereklidir.
+        <div class="create-alert" role="alert">
+            <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+            <div>
+                <strong>Eksik kayıtlar var.</strong><br />
+                Kargo oluşturmak için en az 2 müşteri, 2 aktif şube ve 1 teslimat adresi bulunmalıdır.
+                Gerekli kayıtlar tamamlanana kadar oluşturma butonu kullanılamaz.
+            </div>
         </div>
     }
 
-    <form asp-controller="AdminCargos"
-          asp-action="Create"
-          method="post">
-
+    <form asp-controller="AdminCargos" asp-action="Create" method="post" id="createCargoForm">
         @Html.AntiForgeryToken()
 
-        <div class="row g-3">
+        <div class="create-layout">
+            <div class="create-left">
+                <!-- 1 / GÖNDERİCİ VE ALICI -->
+                <section class="create-card" aria-labelledby="create-people-title">
+                    <div class="create-card-head">
+                        <div class="create-card-icon"><span class="material-symbols-outlined" aria-hidden="true">group</span></div>
+                        <div>
+                            <h2 id="create-people-title">01 · Gönderici ve Alıcı</h2>
+                            <p>Gönderinin taraflarını seçin.</p>
+                        </div>
+                    </div>
+                    <div class="create-card-body">
+                        <div class="create-fields">
+                            <div class="create-field">
+                                <label asp-for="Cargo.SenderId" class="create-label">Gönderici</label>
+                                <select asp-for="Cargo.SenderId" asp-items="Model.Customers" class="create-select">
+                                    <option value="">Gönderici seçiniz</option>
+                                </select>
+                                <span asp-validation-for="Cargo.SenderId"></span>
+                            </div>
+                            <div class="create-field">
+                                <label asp-for="Cargo.ReceiverId" class="create-label">Alıcı</label>
+                                <select asp-for="Cargo.ReceiverId" asp-items="Model.Customers" class="create-select">
+                                    <option value="">Alıcı seçiniz</option>
+                                </select>
+                                <span asp-validation-for="Cargo.ReceiverId"></span>
+                            </div>
+                        </div>
+                        <div class="create-inline-info">
+                            <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                            Gönderici ve alıcı kayıtları sistemde önceden tanımlanmış olmalıdır.
+                        </div>
+                    </div>
+                </section>
 
-            <div class="col-md-6">
-                <label class="form-label">Gönderici</label>
-                <select asp-for="Cargo.SenderId"
-                        asp-items="Model.Customers"
-                        class="form-select">
-                    <option value="">Gönderici seçiniz</option>
-                </select>
+                <!-- 2 / GÜZERGÂH -->
+                <section class="create-card" aria-labelledby="create-route-title">
+                    <div class="create-card-head">
+                        <div class="create-card-icon"><span class="material-symbols-outlined" aria-hidden="true">route</span></div>
+                        <div>
+                            <h2 id="create-route-title">02 · Gönderi Güzergâhı</h2>
+                            <p>Çıkış, varış ve teslimat adresini belirleyin.</p>
+                        </div>
+                    </div>
+                    <div class="create-card-body">
+                        <div class="create-fields">
+                            <div class="create-field">
+                                <label asp-for="Cargo.OriginBranchId" class="create-label">Çıkış Şubesi</label>
+                                <select asp-for="Cargo.OriginBranchId" asp-items="Model.Branches" class="create-select">
+                                    <option value="">Çıkış şubesi seçiniz</option>
+                                </select>
+                                <span asp-validation-for="Cargo.OriginBranchId"></span>
+                            </div>
+                            <div class="create-field">
+                                <label asp-for="Cargo.DestinationBranchId" class="create-label">Varış Şubesi</label>
+                                <select asp-for="Cargo.DestinationBranchId" asp-items="Model.Branches" class="create-select">
+                                    <option value="">Varış şubesi seçiniz</option>
+                                </select>
+                                <span asp-validation-for="Cargo.DestinationBranchId"></span>
+                            </div>
+                            <div class="create-field full">
+                                <label asp-for="Cargo.DeliveryAddressId" class="create-label">Teslimat Adresi</label>
+                                <select asp-for="Cargo.DeliveryAddressId" asp-items="Model.Addresses" class="create-select">
+                                    <option value="">Teslimat adresi seçiniz</option>
+                                </select>
+                                <span asp-validation-for="Cargo.DeliveryAddressId"></span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3 / PAKET ÖZELLİKLERİ -->
+                <section class="create-card" aria-labelledby="create-parcel-title">
+                    <div class="create-card-head">
+                        <div class="create-card-icon"><span class="material-symbols-outlined" aria-hidden="true">inventory_2</span></div>
+                        <div>
+                            <h2 id="create-parcel-title">03 · Kargo Bilgileri</h2>
+                            <p>Gönderi tipini, ağırlığını ve paket ölçülerini girin.</p>
+                        </div>
+                    </div>
+                    <div class="create-card-body">
+                        <div class="create-fields">
+                            <div class="create-field">
+                                <label asp-for="Cargo.Type" class="create-label">Gönderi Tipi</label>
+                                <select asp-for="Cargo.Type" asp-items="Html.GetEnumSelectList<DeliveryType>()" class="create-select"></select>
+                                <span asp-validation-for="Cargo.Type"></span>
+                            </div>
+                            <div class="create-field">
+                                <label asp-for="Cargo.WeightKg" class="create-label">Ağırlık (kg)</label>
+                                <input asp-for="Cargo.WeightKg" type="number" min="0.01" step="0.01" class="create-input" placeholder="Örn: 2,50" />
+                                <span asp-validation-for="Cargo.WeightKg"></span>
+                            </div>
+                            <div class="create-field">
+                                <label asp-for="Cargo.WidthCm" class="create-label">En (cm)</label>
+                                <input asp-for="Cargo.WidthCm" type="number" min="0.01" step="0.01" class="create-input" placeholder="Örn: 30" />
+                                <span asp-validation-for="Cargo.WidthCm"></span>
+                            </div>
+                            <div class="create-field">
+                                <label asp-for="Cargo.LengthCm" class="create-label">Boy (cm)</label>
+                                <input asp-for="Cargo.LengthCm" type="number" min="0.01" step="0.01" class="create-input" placeholder="Örn: 40" />
+                                <span asp-validation-for="Cargo.LengthCm"></span>
+                            </div>
+                            <div class="create-field">
+                                <label asp-for="Cargo.HeightCm" class="create-label">Yükseklik (cm)</label>
+                                <input asp-for="Cargo.HeightCm" type="number" min="0.01" step="0.01" class="create-input" placeholder="Örn: 20" />
+                                <span asp-validation-for="Cargo.HeightCm"></span>
+                            </div>
+                        </div>
+                        <div class="create-inline-info">
+                            <span class="material-symbols-outlined" aria-hidden="true">straighten</span>
+                            Desi hesaplaması için paket ölçülerini santimetre cinsinden girin.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4 / EK HİZMETLER -->
+                <section class="create-card" aria-labelledby="create-services-title">
+                    <div class="create-card-head">
+                        <div class="create-card-icon"><span class="material-symbols-outlined" aria-hidden="true">verified</span></div>
+                        <div>
+                            <h2 id="create-services-title">04 · Ek Hizmetler</h2>
+                            <p>Gönderi için ihtiyaç duyulan hizmetleri işaretleyin.</p>
+                        </div>
+                    </div>
+                    <div class="create-card-body">
+                        <div class="create-service-grid">
+                            <label class="create-service" for="extraServicePackaging">
+                                <input id="extraServicePackaging" type="checkbox" name="SelectedExtraServices" value="1" />
+                                <span><strong>Özel Paketleme</strong><small>Ek paketleme hizmeti</small></span>
+                            </label>
+                            <label class="create-service" for="extraServiceGift">
+                                <input id="extraServiceGift" type="checkbox" name="SelectedExtraServices" value="2" />
+                                <span><strong>Hediye Paketi</strong><small>Hediye amaçlı hazırlık</small></span>
+                            </label>
+                            <label class="create-service" for="extraServiceInsurance">
+                                <input id="extraServiceInsurance" type="checkbox" name="SelectedExtraServices" value="4" />
+                                <span><strong>Sigorta</strong><small>Ek güvence seçeneği</small></span>
+                            </label>
+                        </div>
+
+                        <label class="create-fragile" for="Cargo_IsFragile">
+                            <input asp-for="Cargo.IsFragile" type="checkbox" />
+                            <span class="material-symbols-outlined" aria-hidden="true">heart_broken</span>
+                            <span>
+                                <strong>Kırılabilir Kargo</strong>
+                                <small>Gönderinin hassas taşıma gerektirdiğini belirtir.</small>
+                            </span>
+                        </label>
+                        <span asp-validation-for="Cargo.IsFragile"></span>
+                    </div>
+                </section>
             </div>
 
-            <div class="col-md-6">
-                <label class="form-label">Alıcı</label>
-                <select asp-for="Cargo.ReceiverId"
-                        asp-items="Model.Customers"
-                        class="form-select">
-                    <option value="">Alıcı seçiniz</option>
-                </select>
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Çıkış Şubesi</label>
-                <select asp-for="Cargo.OriginBranchId"
-                        asp-items="Model.Branches"
-                        class="form-select">
-                    <option value="">Çıkış şubesi seçiniz</option>
-                </select>
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Varış Şubesi</label>
-                <select asp-for="Cargo.DestinationBranchId"
-                        asp-items="Model.Branches"
-                        class="form-select">
-                    <option value="">Varış şubesi seçiniz</option>
-                </select>
-            </div>
-
-            <div class="col-md-12">
-                <label class="form-label">Teslimat Adresi</label>
-                <select asp-for="Cargo.DeliveryAddressId"
-                        asp-items="Model.Addresses"
-                        class="form-select">
-                    <option value="">Adres seçiniz</option>
-                </select>
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Gönderi Tipi</label>
-                <select asp-for="Cargo.Type"
-                        asp-items="Html.GetEnumSelectList<DeliveryType>()"
-                        class="form-select">
-                </select>
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Ağırlık (kg)</label>
-                <input asp-for="Cargo.WeightKg"
-                       type="number" min="0.01" step="0.01"
-                       class="form-control" />
-            </div>
-
-            <div class="col-md-4">
-                <label class="form-label">En (cm)</label>
-                <input asp-for="Cargo.WidthCm"
-                       type="number" min="0.01" step="0.01"
-                       class="form-control" />
-            </div>
-
-            <div class="col-md-4">
-                <label class="form-label">Boy (cm)</label>
-                <input asp-for="Cargo.LengthCm"
-                       type="number" min="0.01" step="0.01"
-                       class="form-control" />
-            </div>
-
-            <div class="col-md-4">
-                <label class="form-label">Yükseklik (cm)</label>
-                <input asp-for="Cargo.HeightCm"
-                       type="number" min="0.01" step="0.01"
-                       class="form-control" />
-            </div>
-
-            <div class="col-md-12">
-                <label class="form-label">Ek Hizmetler</label>
-
-                <div>
-                    <label>
-                        <input type="checkbox"
-                               name="SelectedExtraServices"
-                               value="1" />
-                        Özel Paketleme
-                    </label>
+            <!-- SAĞ / CANLI ÖZET -->
+            <aside class="create-side" aria-label="Gönderi özeti">
+                <div class="create-summary">
+                    <div class="create-summary-head">
+                        <div class="create-summary-overline">YENİ GÖNDERİ / ÖZET</div>
+                        <h2>Gönderi Özeti</h2>
+                        <p>Formu doldurdukça seçtiğiniz bilgileri burada görebilirsiniz.</p>
+                    </div>
+                    <div class="create-summary-body">
+                        <div class="create-route">
+                            <div class="create-route-node"><small>ÇIKIŞ ŞUBESİ</small><strong id="summaryOrigin">Henüz seçilmedi</strong></div>
+                            <div class="create-route-arrow" aria-hidden="true">→</div>
+                            <div class="create-route-node"><small>VARIŞ ŞUBESİ</small><strong id="summaryDestination">Henüz seçilmedi</strong></div>
+                        </div>
+                        <div class="create-summary-divider"></div>
+                        <div class="create-summary-row"><span>Gönderici</span><strong id="summarySender">Seçilmedi</strong></div>
+                        <div class="create-summary-row"><span>Alıcı</span><strong id="summaryReceiver">Seçilmedi</strong></div>
+                        <div class="create-summary-row"><span>Teslimat Adresi</span><strong id="summaryAddress">Seçilmedi</strong></div>
+                        <div class="create-summary-divider"></div>
+                        <div class="create-summary-row"><span>Gönderi Tipi</span><strong id="summaryType">—</strong></div>
+                        <div class="create-summary-row"><span>Ağırlık</span><strong id="summaryWeight">—</strong></div>
+                        <div class="create-summary-row"><span>Hacimsel Desi</span><strong id="summaryDesi">—</strong></div>
+                        <div class="create-summary-row"><span>Ek Hizmetler</span><strong id="summaryExtras">Yok</strong></div>
+                        <div class="create-summary-row"><span>Kırılabilir</span><strong id="summaryFragile">Hayır</strong></div>
+                        <div class="create-summary-divider"></div>
+                        <div class="create-price-note">
+                            <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                            <span>Görüntülenen desi bilgilendirme amaçlıdır. Nihai ücret ve tahmini teslimat, kaydetme sırasında mevcut sistem tarafından hesaplanır.</span>
+                        </div>
+                        <div class="create-actions">
+                            <button type="submit" class="create-submit" disabled="@missingData">
+                                <span class="material-symbols-outlined" aria-hidden="true">add_box</span>
+                                Kargoyu Oluştur
+                            </button>
+                            <a asp-controller="AdminCargos" asp-action="Index" class="create-cancel">Vazgeç</a>
+                        </div>
+                    </div>
                 </div>
-
-                <div>
-                    <label>
-                        <input type="checkbox"
-                               name="SelectedExtraServices"
-                               value="2" />
-                        Hediye Paketi
-                    </label>
-                </div>
-
-                <div>
-                    <label>
-                        <input type="checkbox"
-                               name="SelectedExtraServices"
-                               value="4" />
-                        Sigorta
-                    </label>
-                </div>
-            </div>
-
-            <div class="col-md-12">
-                <label>
-                    <input asp-for="Cargo.IsFragile"
-                           type="checkbox" />
-                    Kırılabilir Kargo
-                </label>
-            </div>
-
-            <div class="col-12">
-                <button type="submit"
-                        class="btn btn-primary"
-                        disabled="@missingData">
-                    Kargo Oluştur
-                </button>
-
-                <a asp-controller="Dashboard"
-                   asp-action="Index"
-                   class="btn btn-secondary">
-                    Vazgeç
-                </a>
-            </div>
-
+                <div class="create-side-foot"><span class="material-symbols-outlined" aria-hidden="true">lock</span> Bilgiler mevcut CargoTrack kayıt sistemine gönderilir.</div>
+            </aside>
         </div>
     </form>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            const byId = id => document.getElementById(id);
+            const textFor = id => {
+                const element = byId(id);
+                if (!element || !element.options || element.selectedIndex < 0) return "Seçilmedi";
+                const option = element.options[element.selectedIndex];
+                return option && option.value !== "" ? option.text.trim() : "Seçilmedi";
+            };
+            const numeric = id => {
+                const element = byId(id);
+                return element ? Number(String(element.value).replace(',', '.')) : NaN;
+            };
+            const numberTR = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 });
+
+            function refreshSummary() {
+                byId('summarySender').textContent = textFor('Cargo_SenderId');
+                byId('summaryReceiver').textContent = textFor('Cargo_ReceiverId');
+                byId('summaryOrigin').textContent = textFor('Cargo_OriginBranchId').replace('Seçilmedi', 'Henüz seçilmedi');
+                byId('summaryDestination').textContent = textFor('Cargo_DestinationBranchId').replace('Seçilmedi', 'Henüz seçilmedi');
+                byId('summaryAddress').textContent = textFor('Cargo_DeliveryAddressId');
+                byId('summaryType').textContent = textFor('Cargo_Type');
+
+                const weight = numeric('Cargo_WeightKg');
+                byId('summaryWeight').textContent = Number.isFinite(weight) && weight > 0
+                    ? numberTR.format(weight) + ' kg' : '—';
+
+                const width = numeric('Cargo_WidthCm');
+                const length = numeric('Cargo_LengthCm');
+                const height = numeric('Cargo_HeightCm');
+                const desi = (width * length * height) / 3000;
+                byId('summaryDesi').textContent = [width, length, height].every(n => Number.isFinite(n) && n > 0)
+                    ? numberTR.format(desi) + ' desi' : '—';
+
+                const extras = Array.from(document.querySelectorAll('input[name="SelectedExtraServices"]:checked'))
+                    .map(el => el.closest('label')?.querySelector('strong')?.textContent.trim() || '')
+                    .filter(Boolean);
+                byId('summaryExtras').textContent = extras.length ? extras.join(', ') : 'Yok';
+
+                const fragile = byId('Cargo_IsFragile');
+                byId('summaryFragile').textContent = fragile && fragile.checked ? 'Evet' : 'Hayır';
+            }
+
+            document.querySelectorAll('#createCargoForm input, #createCargoForm select')
+                .forEach(element => {
+                    element.addEventListener('input', refreshSummary);
+                    element.addEventListener('change', refreshSummary);
+                });
+
+            refreshSummary();
+        })();
+    </script>
+}
+

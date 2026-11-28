@@ -2,138 +2,900 @@
 @model CargoTrack.WebUI.Models.AdminCargoEditVm
 
 @{
+    Layout = "_PanelLayout";
     ViewData["Title"] = "Kargo Güncelle";
+
+    var extraServices = Enum.GetValues<ExtraServiceType>()
+        .Where(x => x != ExtraServiceType.None)
+        .ToList();
 }
 
-<div class="container py-4">
+<style>
+    /* CargoTrack — Admin cargo form pages (Edit / Status). Scoped for _PanelLayout. */
+    .ctf-page {
+        color: #0b1c30;
+        font-family: 'Hanken Grotesk', Arial, sans-serif;
+    }
 
-    <h2>Kargo Güncelle</h2>
-
-    <form asp-controller="AdminCargos"
-          asp-action="Edit"
-          method="post">
-
-        @Html.AntiForgeryToken()
-
-        <input asp-for="Cargo.CargoId" type="hidden" />
-
-        <div asp-validation-summary="All"
-             class="text-danger"></div>
-
-        <div class="mb-3">
-            <label>Çıkış Şubesi</label>
-
-            <select asp-for="Cargo.OriginBranchId"
-                    asp-items="Model.Branches"
-                    class="form-select">
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label>Varış Şubesi</label>
-
-            <select asp-for="Cargo.DestinationBranchId"
-                    asp-items="Model.Branches"
-                    class="form-select">
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label>Teslimat Adresi</label>
-
-            <select asp-for="Cargo.DeliveryAddressId"
-                    asp-items="Model.Addresses"
-                    class="form-select">
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label>Gönderi Tipi</label>
-
-            <select asp-for="Cargo.Type"
-                    asp-items="Html.GetEnumSelectList<DeliveryType>()"
-                    class="form-select">
-            </select>
-        </div>
-
-        <div class="row">
-            <div class="col-md-3 mb-3">
-                <label>Ağırlık (kg)</label>
-
-                <input asp-for="Cargo.WeightKg"
-                       type="number"
-                       step="0.01"
-                       min="0.01"
-                       class="form-control" />
-            </div>
-
-            <div class="col-md-3 mb-3">
-                <label>En (cm)</label>
-
-                <input asp-for="Cargo.WidthCm"
-                       type="number"
-                       step="0.01"
-                       min="0.01"
-                       class="form-control" />
-            </div>
-
-            <div class="col-md-3 mb-3">
-                <label>Boy (cm)</label>
-
-                <input asp-for="Cargo.LengthCm"
-                       type="number"
-                       step="0.01"
-                       min="0.01"
-                       class="form-control" />
-            </div>
-
-            <div class="col-md-3 mb-3">
-                <label>Yükseklik (cm)</label>
-
-                <input asp-for="Cargo.HeightCm"
-                       type="number"
-                       step="0.01"
-                       min="0.01"
-                       class="form-control" />
-            </div>
-        </div>
-
-        <h4>Ek Hizmetler</h4>
-
-        @foreach (var service in Enum.GetValues<ExtraServiceType>()
-            .Where(x => x != ExtraServiceType.None))
-        {
-            <div class="form-check">
-                <input type="checkbox"
-                       name="SelectedExtraServices"
-                       value="@((int)service)"
-                       checked="@(Model.SelectedExtraServices.Contains(service))"
-                       class="form-check-input" />
-
-                <label class="form-check-label">
-                    @service
-                </label>
-            </div>
+        .ctf-page *, .ctf-page *::before, .ctf-page *::after {
+            box-sizing: border-box;
         }
 
-        <div class="form-check my-3">
-            <input asp-for="Cargo.IsFragile"
-                   class="form-check-input" />
+        .ctf-page a {
+            text-decoration: none;
+        }
 
-            <label class="form-check-label">
-                Kırılabilir Kargo
-            </label>
+    .ctf-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin: 4px 0 27px;
+    }
+
+    .ctf-kicker {
+        margin: 0 0 10px;
+        color: #dc7c00;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.45px;
+    }
+
+    .ctf-title {
+        margin: 0 0 8px;
+        font-size: clamp(26px, 3vw, 34px);
+        font-weight: 800;
+        letter-spacing: -1.1px;
+        line-height: 1.14;
+    }
+
+    .ctf-intro {
+        margin: 0;
+        color: #7d8ea4;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .ctf-back {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 11px 16px;
+        min-height: 43px;
+        background: #fff;
+        color: #2d506f;
+        border: 1px solid #dfe8f2;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+        .ctf-back:hover {
+            color: #0b1c30;
+            background: #f1f6fd;
+        }
+
+        .ctf-back .material-symbols-outlined {
+            font-size: 18px;
+        }
+
+    .ctf-validation.validation-summary-valid {
+        display: none;
+    }
+
+    .ctf-validation.validation-summary-errors {
+        background: #fff2f2;
+        border: 1px solid #f2cbd0;
+        color: #a22f3f;
+        border-radius: 12px;
+        margin: 0 0 20px;
+        padding: 14px 18px;
+        font-size: 13px;
+    }
+
+    .ctf-validation ul {
+        margin: 0;
+        padding-left: 19px;
+    }
+
+    .ctf-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.65fr) minmax(305px, .82fr);
+        align-items: start;
+        gap: 21px;
+    }
+
+    .ctf-stack {
+        display: grid;
+        gap: 19px;
+        min-width: 0;
+    }
+
+    .ctf-card, .ctf-side-card {
+        min-width: 0;
+        background: #fff;
+        border: 1px solid #e0e8f2;
+        border-radius: 17px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(12,32,55,.033);
+    }
+
+    .ctf-card-head {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        padding: 21px 24px;
+        border-bottom: 1px solid #ebf0f6;
+    }
+
+    .ctf-icon {
+        flex: 0 0 42px;
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        color: #de8008;
+        background: #fff1e0;
+    }
+
+        .ctf-icon.blue {
+            color: #386994;
+            background: #edf4fd;
+        }
+
+        .ctf-icon .material-symbols-outlined {
+            font-size: 22px;
+        }
+
+    .ctf-card-head h2 {
+        margin: 0 0 5px;
+        font-size: 17px;
+        line-height: 1.25;
+        font-weight: 800;
+    }
+
+    .ctf-card-head p {
+        margin: 0;
+        font-size: 12px;
+        color: #8495a9;
+    }
+
+    .ctf-card-body {
+        padding: 24px;
+    }
+
+    .ctf-fields {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 19px;
+    }
+
+    .ctf-field {
+        min-width: 0;
+    }
+
+        .ctf-field.full {
+            grid-column: 1 / -1;
+        }
+
+    .ctf-label {
+        display: block;
+        margin: 0 0 9px;
+        font-size: 12px;
+        color: #314a66;
+        font-weight: 800;
+    }
+
+    .ctf-input, .ctf-select, .ctf-textarea {
+        display: block;
+        width: 100%;
+        min-height: 49px;
+        border: 1px solid #dfe7f1;
+        border-radius: 10px;
+        background: #fff;
+        color: #193651;
+        font-family: inherit;
+        font-size: 13px;
+        padding: 0 13px;
+        outline: none;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .ctf-textarea {
+        min-height: 124px;
+        padding: 13px;
+        resize: vertical;
+    }
+
+        .ctf-input:focus, .ctf-select:focus, .ctf-textarea:focus {
+            border-color: #fd8b00;
+            box-shadow: 0 0 0 3px rgba(253,139,0,.13);
+        }
+
+        .ctf-input.input-validation-error, .ctf-select.input-validation-error, .ctf-textarea.input-validation-error {
+            border-color: #d84e55;
+        }
+
+    .ctf-field .field-validation-error {
+        display: block;
+        color: #b62b3a;
+        font-size: 11px;
+        margin-top: 7px;
+    }
+
+    .ctf-tip {
+        margin: 8px 0 0;
+        font-size: 11px;
+        color: #899aaf;
+        line-height: 1.6;
+    }
+
+    .ctf-note {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        margin-top: 18px;
+        border-radius: 11px;
+        background: #f3f7fd;
+        color: #617994;
+        padding: 13px 14px;
+        font-size: 12px;
+        line-height: 1.65;
+    }
+
+        .ctf-note .material-symbols-outlined {
+            color: #6687ad;
+            font-size: 19px;
+            flex: 0 0 auto;
+        }
+
+        .ctf-note.warning {
+            background: #fff7ec;
+            color: #91621f;
+        }
+
+            .ctf-note.warning .material-symbols-outlined {
+                color: #e39120;
+            }
+
+    .ctf-service-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 11px;
+    }
+
+    .ctf-service {
+        cursor: pointer;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        min-width: 0;
+        padding: 14px 12px;
+        background: #fbfdff;
+        border-radius: 12px;
+        border: 1px solid #e1e9f2;
+    }
+
+        .ctf-service:has(input:checked) {
+            border-color: #f7b563;
+            background: #fff7ed;
+        }
+
+        .ctf-service input {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
+            margin: 2px 0 0;
+            accent-color: #fd8b00;
+        }
+
+        .ctf-service strong {
+            display: block;
+            font-size: 12px;
+            font-weight: 800;
+            color: #263e59;
+        }
+
+        .ctf-service small {
+            display: block;
+            margin-top: 5px;
+            font-size: 11px;
+            color: #8495a9;
+            line-height: 1.45;
+        }
+
+    .ctf-fragile {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        margin-top: 15px;
+        background: #fffbf4;
+        border: 1px solid #efddc1;
+        border-radius: 12px;
+    }
+
+        .ctf-fragile input {
+            width: 19px;
+            height: 19px;
+            margin: 0;
+            accent-color: #fd8b00;
+        }
+
+        .ctf-fragile .material-symbols-outlined {
+            color: #df8a1b;
+        }
+
+        .ctf-fragile strong {
+            display: block;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .ctf-fragile small {
+            display: block;
+            color: #957f64;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+    .ctf-side {
+        min-width: 0;
+        position: sticky;
+        top: 24px;
+    }
+
+    .ctf-side-head {
+        color: white;
+        background: linear-gradient(140deg, #0b1c30, #1c395a);
+        padding: 24px;
+    }
+
+    .ctf-side-kicker {
+        margin: 0 0 9px;
+        color: #ffad40;
+        letter-spacing: 1.2px;
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+    .ctf-side-head h2 {
+        color: #fff;
+        font-size: 20px;
+        font-weight: 800;
+        margin: 0 0 8px;
+    }
+
+    .ctf-side-head p {
+        color: #bbcee4;
+        font-size: 12px;
+        line-height: 1.65;
+        margin: 0;
+    }
+
+    .ctf-side-body {
+        padding: 23px;
+    }
+
+    .ctf-route {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 29px minmax(0, 1fr);
+        align-items: center;
+        gap: 10px;
+    }
+
+    .ctf-route-cell {
+        min-width: 0;
+    }
+
+        .ctf-route-cell:last-child {
+            text-align: right;
+        }
+
+        .ctf-route-cell small {
+            display: block;
+            margin: 0 0 6px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #93a2b5;
+        }
+
+        .ctf-route-cell strong {
+            display: block;
+            color: #1c3957;
+            font-size: 12px;
+            font-weight: 800;
+            overflow-wrap: anywhere;
+        }
+
+    .ctf-route-arrow {
+        text-align: center;
+        color: #fd8b00;
+        font-size: 20px;
+    }
+
+    .ctf-divider {
+        border-top: 1px solid #e8edf4;
+        margin: 21px 0;
+    }
+
+    .ctf-summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 0 0 16px;
+    }
+
+        .ctf-summary-row:last-child {
+            margin: 0;
+        }
+
+        .ctf-summary-row span {
+            color: #8394aa;
+            font-size: 12px;
+            flex: 0 0 42%;
+        }
+
+        .ctf-summary-row strong {
+            font-size: 12px;
+            color: #254664;
+            font-weight: 800;
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+
+    .ctf-action-stack {
+        display: grid;
+        gap: 11px;
+        margin-top: 23px;
+    }
+
+    .ctf-primary {
+        width: 100%;
+        min-height: 49px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        border-radius: 11px;
+        border: none;
+        background: #fd8b00;
+        color: #10253c;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 800;
+        padding: 11px 14px;
+        cursor: pointer;
+    }
+
+        .ctf-primary:hover {
+            background: #ffa32d;
+        }
+
+        .ctf-primary .material-symbols-outlined {
+            font-size: 19px;
+        }
+
+    .ctf-secondary {
+        min-height: 45px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: white;
+        border: 1px solid #dfe8f2;
+        color: #4a6580;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+        .ctf-secondary:hover {
+            color: #0b1c30;
+            background: #f3f7fc;
+        }
+
+    .ctf-small-note {
+        font-size: 11px;
+        color: #98a7b9;
+        line-height: 1.6;
+        margin: 13px 0 0;
+        text-align: center;
+    }
+
+    .ctf-current-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 14px;
+        padding: 22px 24px;
+        background: #0f2742;
+        color: #fff;
+        border-radius: 15px;
+        border: 1px solid #29445f;
+        margin: 0 0 20px;
+    }
+
+        .ctf-current-card small {
+            display: block;
+            color: #a8c0d9;
+            font-size: 11px;
+            letter-spacing: .8px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+    .ctf-current-number {
+        color: #fff;
+        font-size: clamp(20px, 2vw, 26px);
+        font-weight: 800;
+        letter-spacing: -.6px;
+        overflow-wrap: anywhere;
+    }
+
+    .ctf-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #fff1df;
+        color: #a95e0a;
+        border-radius: 20px;
+        padding: 9px 14px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+        .ctf-status-pill:before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 100%;
+            background: currentColor;
+        }
+
+    .ctf-delivery-card {
+        background: #fff;
+        border: 1px solid #e1e8f2;
+        border-radius: 17px;
+        overflow: hidden;
+    }
+
+        .ctf-delivery-card[hidden] {
+            display: none !important;
+        }
+
+    .ctf-delivery-hint {
+        margin: 0 0 15px;
+        color: #68819a;
+        font-size: 12px;
+        line-height: 1.7;
+    }
+
+    .ctf-checklist {
+        display: grid;
+        gap: 13px;
+    }
+
+    .ctf-checklist-item {
+        display: flex;
+        gap: 11px;
+        align-items: flex-start;
+        font-size: 12px;
+        line-height: 1.6;
+        color: #4f6780;
+    }
+
+        .ctf-checklist-item .material-symbols-outlined {
+            color: #28a177;
+            font-size: 19px;
+            flex: 0 0 auto;
+        }
+
+    .ctf-preview-state {
+        padding: 13px 14px;
+        font-size: 14px;
+        font-weight: 800;
+        background: #f2f6fc;
+        border-radius: 10px;
+        color: #213d5b;
+    }
+
+        .ctf-preview-state .material-symbols-outlined {
+            color: #fd8b00;
+            font-size: 18px;
+            vertical-align: text-bottom;
+            margin-right: 5px;
+        }
+
+    @@media (max-width: 1250px) {
+        .ctf-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .ctf-side {
+            position: static;
+        }
+    }
+
+    @@media (max-width: 740px) {
+        .ctf-card-head {
+            padding: 18px;
+        }
+
+        .ctf-card-body {
+            padding: 18px;
+        }
+
+        .ctf-fields {
+            grid-template-columns: 1fr;
+            gap: 17px;
+        }
+
+        .ctf-field.full {
+            grid-column: auto;
+        }
+
+        .ctf-service-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .ctf-head {
+            margin-bottom: 18px;
+        }
+
+        .ctf-back {
+            width: 100%;
+        }
+
+        .ctf-route-cell strong {
+            font-size: 11px;
+        }
+    }
+</style>
+
+<div class="ctf-page">
+    <div class="ctf-head">
+        <div>
+            <div class="ctf-kicker">CARGOTRACK / KARGO OPERASYONLARI</div>
+            <h1 class="ctf-title">Kargo Güncelle</h1>
+            <p class="ctf-intro">Gönderi bilgilerini düzenleyin. Kaydedilen değişiklikler mevcut servis üzerinden işlenecektir.</p>
         </div>
-
-        <button type="submit" class="btn btn-primary">
-            Değişiklikleri Kaydet
-        </button>
-
-        <a asp-controller="Dashboard"
-           asp-action="Index"
-           class="btn btn-secondary">
-            Vazgeç
+        <a asp-controller="AdminCargos" asp-action="Index" class="ctf-back">
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            Kargo Yönetimine Dön
         </a>
+    </div>
 
+    <form asp-controller="AdminCargos" asp-action="Edit" method="post" id="editCargoForm">
+        @Html.AntiForgeryToken()
+        <input asp-for="Cargo.CargoId" type="hidden" />
+        <div asp-validation-summary="All" class="ctf-validation" role="alert"></div>
+
+        <div class="ctf-grid">
+            <div class="ctf-stack">
+                <!-- GÜZERGÂH -->
+                <section class="ctf-card">
+                    <div class="ctf-card-head">
+                        <div class="ctf-icon"><span class="material-symbols-outlined" aria-hidden="true">route</span></div>
+                        <div>
+                            <h2>01 · Gönderi Güzergâhı</h2>
+                            <p>Çıkış, varış şubesi ve teslimat adresini güncelleyin.</p>
+                        </div>
+                    </div>
+                    <div class="ctf-card-body">
+                        <div class="ctf-fields">
+                            <div class="ctf-field">
+                                <label asp-for="Cargo.OriginBranchId" class="ctf-label">Çıkış Şubesi</label>
+                                <select asp-for="Cargo.OriginBranchId" asp-items="Model.Branches" class="ctf-select" id="editOrigin"></select>
+                                <span asp-validation-for="Cargo.OriginBranchId"></span>
+                            </div>
+                            <div class="ctf-field">
+                                <label asp-for="Cargo.DestinationBranchId" class="ctf-label">Varış Şubesi</label>
+                                <select asp-for="Cargo.DestinationBranchId" asp-items="Model.Branches" class="ctf-select" id="editDestination"></select>
+                                <span asp-validation-for="Cargo.DestinationBranchId"></span>
+                            </div>
+                            <div class="ctf-field full">
+                                <label asp-for="Cargo.DeliveryAddressId" class="ctf-label">Teslimat Adresi</label>
+                                <select asp-for="Cargo.DeliveryAddressId" asp-items="Model.Addresses" class="ctf-select" id="editAddress"></select>
+                                <span asp-validation-for="Cargo.DeliveryAddressId"></span>
+                            </div>
+                        </div>
+                        <div class="ctf-note">
+                            <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                            <span>Varış şubesi ile teslimat adresinin birbiriyle uyumlu olduğunu kontrol edin.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAKET ÖLÇÜLERİ -->
+                <section class="ctf-card">
+                    <div class="ctf-card-head">
+                        <div class="ctf-icon"><span class="material-symbols-outlined" aria-hidden="true">inventory_2</span></div>
+                        <div>
+                            <h2>02 · Kargo Bilgileri</h2>
+                            <p>Gönderi tipi, ağırlık ve paket ölçüleri.</p>
+                        </div>
+                    </div>
+                    <div class="ctf-card-body">
+                        <div class="ctf-fields">
+                            <div class="ctf-field full">
+                                <label asp-for="Cargo.Type" class="ctf-label">Gönderi Tipi</label>
+                                <select asp-for="Cargo.Type" asp-items="Html.GetEnumSelectList<DeliveryType>()" class="ctf-select" id="editType"></select>
+                                <span asp-validation-for="Cargo.Type"></span>
+                            </div>
+                            <div class="ctf-field full">
+                                <label asp-for="Cargo.WeightKg" class="ctf-label">Ağırlık (kg)</label>
+                                <input asp-for="Cargo.WeightKg" type="number" min="0.01" step="0.01" class="ctf-input" id="editWeight" />
+                                <span asp-validation-for="Cargo.WeightKg"></span>
+                            </div>
+                            <div class="ctf-field">
+                                <label asp-for="Cargo.WidthCm" class="ctf-label">En (cm)</label>
+                                <input asp-for="Cargo.WidthCm" type="number" min="0.01" step="0.01" class="ctf-input ctf-dimension" />
+                                <span asp-validation-for="Cargo.WidthCm"></span>
+                            </div>
+                            <div class="ctf-field">
+                                <label asp-for="Cargo.LengthCm" class="ctf-label">Boy (cm)</label>
+                                <input asp-for="Cargo.LengthCm" type="number" min="0.01" step="0.01" class="ctf-input ctf-dimension" />
+                                <span asp-validation-for="Cargo.LengthCm"></span>
+                            </div>
+                            <div class="ctf-field full">
+                                <label asp-for="Cargo.HeightCm" class="ctf-label">Yükseklik (cm)</label>
+                                <input asp-for="Cargo.HeightCm" type="number" min="0.01" step="0.01" class="ctf-input ctf-dimension" />
+                                <span asp-validation-for="Cargo.HeightCm"></span>
+                            </div>
+                        </div>
+                        <div class="ctf-note">
+                            <span class="material-symbols-outlined" aria-hidden="true">calculate</span>
+                            <span>Desi önizlemesi, en × boy × yükseklik / 3000 formülüyle gösterilir. Nihai ücret sistem tarafından hesaplanır.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- EK HİZMETLER -->
+                <section class="ctf-card">
+                    <div class="ctf-card-head">
+                        <div class="ctf-icon"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span></div>
+                        <div>
+                            <h2>03 · Ek Hizmetler</h2>
+                            <p>Gönderi için ek hizmetleri ve kırılabilirlik bilgisini düzenleyin.</p>
+                        </div>
+                    </div>
+                    <div class="ctf-card-body">
+                        <div class="ctf-service-grid">
+                            @foreach (var service in extraServices)
+                            {
+                                string serviceName = Convert.ToInt32(service) switch
+                                {
+                                    1 => "Özel Paketleme",
+                                    2 => "Hediye Paketi",
+                                    4 => "Sigorta",
+                                    _ => service.ToString()
+                                };
+                                <label class="ctf-service">
+                                    <input type="checkbox"
+                                           name="SelectedExtraServices"
+                                           value="@((int)service)"
+                                           checked="@(Model.SelectedExtraServices != null && Model.SelectedExtraServices.Contains(service))"
+                                           data-service-name="@serviceName" />
+                                    <span>
+                                        <strong>@serviceName</strong>
+                                        <small>Bu hizmeti gönderiye ekle</small>
+                                    </span>
+                                </label>
+                            }
+                        </div>
+                        <label class="ctf-fragile">
+                            <input asp-for="Cargo.IsFragile" type="checkbox" id="editFragile" />
+                            <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+                            <span>
+                                <strong>Kırılabilir Kargo</strong>
+                                <small>Dikkatli taşıma gerektiren paket olarak işaretle.</small>
+                            </span>
+                        </label>
+                    </div>
+                </section>
+            </div>
+
+            <!-- CANLI ÖZET -->
+            <aside class="ctf-side">
+                <div class="ctf-side-card">
+                    <div class="ctf-side-head">
+                        <div class="ctf-side-kicker">CARGOTRACK / DEĞİŞİKLİK ÖZETİ</div>
+                        <h2>Gönderi Özeti</h2>
+                        <p>Seçtiğiniz bilgiler burada güncellenir. Değişiklikler yalnızca kaydettiğinizde gönderilir.</p>
+                    </div>
+                    <div class="ctf-side-body">
+                        <div class="ctf-route">
+                            <div class="ctf-route-cell">
+                                <small>ÇIKIŞ ŞUBESİ</small>
+                                <strong id="editSummaryOrigin">—</strong>
+                            </div>
+                            <span class="ctf-route-arrow" aria-hidden="true">→</span>
+                            <div class="ctf-route-cell">
+                                <small>VARIŞ ŞUBESİ</small>
+                                <strong id="editSummaryDestination">—</strong>
+                            </div>
+                        </div>
+                        <div class="ctf-divider"></div>
+                        <div class="ctf-summary-row"><span>Teslimat Adresi</span><strong id="editSummaryAddress">—</strong></div>
+                        <div class="ctf-summary-row"><span>Gönderi Tipi</span><strong id="editSummaryType">—</strong></div>
+                        <div class="ctf-summary-row"><span>Ağırlık</span><strong id="editSummaryWeight">—</strong></div>
+                        <div class="ctf-summary-row"><span>Hacimsel Desi</span><strong id="editSummaryDesi">—</strong></div>
+                        <div class="ctf-summary-row"><span>Ek Hizmetler</span><strong id="editSummaryServices">—</strong></div>
+                        <div class="ctf-summary-row"><span>Kırılabilir</span><strong id="editSummaryFragile">Hayır</strong></div>
+                        <div class="ctf-divider"></div>
+                        <div class="ctf-note" style="margin:0">
+                            <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                            <span>Bu panel yalnızca önizlemedir. Fiyat ve kargo kuralları Backend tarafından uygulanır.</span>
+                        </div>
+                        <div class="ctf-action-stack">
+                            <button type="submit" class="ctf-primary">
+                                <span class="material-symbols-outlined" aria-hidden="true">save</span>
+                                Değişiklikleri Kaydet
+                            </button>
+                            <a asp-controller="Dashboard" asp-action="Index" class="ctf-secondary">Vazgeç</a>
+                        </div>
+                    </div>
+                </div>
+                <p class="ctf-small-note">Değişiklikler doğrulandıktan sonra kaydedilir.</p>
+            </aside>
+        </div>
     </form>
 </div>
+
+<script>
+    (function() {
+        const form = document.getElementById('editCargoForm');
+        if (!form) return;
+
+        const byId = id => document.getElementById(id);
+        const optionText = id => {
+            const select = byId(id);
+            return select && select.selectedOptions.length
+                ? select.selectedOptions[0].text.trim()
+                : '—';
+        };
+        const numValue = value => {
+            const number = Number(String(value || '').replace(',', '.'));
+            return Number.isFinite(number) && number > 0 ? number : null;
+        };
+        const formatter = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 });
+
+        function renderSummary() {
+            byId('editSummaryOrigin').textContent = optionText('editOrigin');
+            byId('editSummaryDestination').textContent = optionText('editDestination');
+            byId('editSummaryAddress').textContent = optionText('editAddress');
+            byId('editSummaryType').textContent = optionText('editType');
+
+            const weight = numValue(byId('editWeight').value);
+            byId('editSummaryWeight').textContent = weight !== null
+                ? formatter.format(weight) + ' kg' : '—';
+
+            const dimensions = Array.from(form.querySelectorAll('.ctf-dimension'))
+                .map(input => numValue(input.value));
+            const volume = dimensions.every(n => n !== null)
+                ? dimensions.reduce((a, b) => a * b, 1) / 3000
+                : null;
+            byId('editSummaryDesi').textContent = volume !== null
+                ? formatter.format(volume) + ' desi' : '—';
+
+            const selectedServices = Array.from(
+                form.querySelectorAll('input[name="SelectedExtraServices"]:checked')
+            ).map(input => input.dataset.serviceName || '').filter(Boolean);
+            byId('editSummaryServices').textContent = selectedServices.length
+                ? selectedServices.join(', ') : 'Yok';
+            byId('editSummaryFragile').textContent = byId('editFragile').checked ? 'Evet' : 'Hayır';
+        }
+        form.addEventListener('input', renderSummary);
+        form.addEventListener('change', renderSummary);
+        renderSummary();
+    })();
+</script>
+

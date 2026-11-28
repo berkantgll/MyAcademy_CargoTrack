@@ -1,158 +1,784 @@
 ﻿@using CargoTrack.Entity.Enums
+@using System.Globalization
 @model CargoTrack.DTO.CargoDtos.CargoAdminDetailDto
 
 @{
+    Layout = "_PanelLayout";
     ViewData["Title"] = "Kargo Detayı";
 
-    bool isCompleted =
-        Model.Status == CargoStatus.Delivered ||
-        Model.Status == CargoStatus.ReturnedToSender;
+    var tr = CultureInfo.GetCultureInfo("tr-TR");
+    bool isCompleted = Model.Status == CargoStatus.Delivered ||
+                       Model.Status == CargoStatus.ReturnedToSender;
+
+    string StatusName(CargoStatus status) => status switch
+    {
+        CargoStatus.Created => "Oluşturuldu",
+        CargoStatus.AtOriginBranch => "Çıkış Şubesinde",
+        CargoStatus.AtTransferCenter => "Transfer Merkezinde",
+        CargoStatus.AtDestinationBranch => "Varış Şubesinde",
+        CargoStatus.OutForDelivery => "Dağıtıma Çıktı",
+        CargoStatus.Delivered => "Teslim Edildi",
+        CargoStatus.DeliveryFailed => "Teslim Edilemedi",
+        CargoStatus.ReturnInProgress => "İade Sürecinde",
+        CargoStatus.ReturnedToSender => "İade Edildi",
+        _ => status.ToString()
+    };
+
+    string StatusStyle(CargoStatus status) => status switch
+    {
+        CargoStatus.Delivered => "delivered",
+        CargoStatus.ReturnedToSender => "returned",
+        CargoStatus.DeliveryFailed => "failed",
+        CargoStatus.ReturnInProgress => "returned",
+        CargoStatus.OutForDelivery => "out-for-delivery",
+        _ => "in-transit"
+    };
+
+    var currentStatus = StatusName(Model.Status);
+    var currentStyle = StatusStyle(Model.Status);
+    var movements = Model.Movements?
+        .OrderByDescending(x => x.MovementDate)
+        .ToList();
+
+    var qrImageUrl = Url.Action("Image", "CargoQr", new { trackingNumber = Model.TrackingNumber });
+    var trackingUrl = Url.Action("Result", "CargoQr", new { trackingNumber = Model.TrackingNumber });
 }
 
-<div class="container py-4">
+<style>
+    .detail-page {
+        color: #0b1c30;
+    }
 
-    <h2>Kargo Detayı</h2>
+        .detail-page * {
+            box-sizing: border-box;
+        }
 
-    <!-- KARGO BİLGİLERİ -->
-    <div class="card mb-4">
-        <div class="card-body">
+    .detail-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin: 4px 0 26px;
+    }
 
-            <h4>@Model.TrackingNumber</h4>
+    .detail-kicker {
+        color: #e78300;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.4px;
+        margin: 0 0 10px;
+    }
 
-            <p>
-                <strong>Durum:</strong>
-                @Model.Status
-            </p>
+    .detail-heading h1 {
+        font-size: clamp(26px,3vw,34px);
+        letter-spacing: -1px;
+        margin: 0 0 7px;
+        font-weight: 800;
+    }
 
-            <p>
-                <strong>Çıkış Şubesi:</strong>
-                @Model.OriginBranchName
-            </p>
+    .detail-heading p {
+        margin: 0;
+        color: #8090a5;
+        font-size: 13px;
+    }
 
-            <p>
-                <strong>Varış Şubesi:</strong>
-                @Model.DestinationBranchName
-            </p>
+    .detail-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
 
-            <p>
-                <strong>Toplam Ücret:</strong>
-                @(Model.TotalPrice.ToString("N2")) TL
-            </p>
+    .detail-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 42px;
+        padding: 10px 15px;
+        background: #fff;
+        color: #284762;
+        border: 1px solid #dfe7f1;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 800;
+        text-decoration: none;
+        cursor: pointer;
+        font-family: inherit;
+    }
 
-            <p>
-                <strong>Oluşturulma:</strong>
-                @(Model.CreatedDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
-            </p>
+        .detail-button:hover {
+            background: #f0f5fb;
+        }
 
-            <p>
-                <strong>Tahmini Teslimat:</strong>
-                @(Model.EstimatedDeliveryDate.ToLocalTime().ToString("dd.MM.yyyy"))
-            </p>
+        .detail-button.orange {
+            border-color: #fd8b00;
+            background: #fd8b00;
+            color: #0b1c30;
+        }
 
+            .detail-button.orange:hover {
+                background: #ffa42a;
+            }
+
+        .detail-button .material-symbols-outlined {
+            font-size: 18px;
+        }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: minmax(0,1.62fr) minmax(310px,.8fr);
+        align-items: start;
+        gap: 21px;
+    }
+
+    .detail-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        min-width: 0;
+    }
+
+    .detail-card {
+        border: 1px solid #e1e8f1;
+        background: #fff;
+        border-radius: 17px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(14,32,54,.03);
+        min-width: 0;
+    }
+
+    .detail-card-head {
+        padding: 21px 25px;
+        border-bottom: 1px solid #edf1f6;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .detail-card-head-icon {
+        display: grid;
+        place-items: center;
+        background: #fff2e2;
+        color: #dd800c;
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: 11px;
+    }
+
+        .detail-card-head-icon .material-symbols-outlined {
+            font-size: 22px;
+        }
+
+    .detail-card-head h2 {
+        margin: 0 0 5px;
+        font-size: 17px;
+        font-weight: 800;
+    }
+
+    .detail-card-head p {
+        margin: 0;
+        font-size: 12px;
+        color: #8192a7;
+    }
+
+    .detail-card-body {
+        padding: 24px 25px;
+    }
+
+    .detail-tracking-hero {
+        background: linear-gradient(140deg,#0b1c30,#1b3958);
+        padding: 27px 30px;
+        color: #fff;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .detail-hero-caption {
+        color: #a7bfd9;
+        text-transform: uppercase;
+        letter-spacing: 1.1px;
+        font-size: 10px;
+        font-weight: 800;
+        margin: 0 0 10px;
+    }
+
+    .detail-tracking-number {
+        font-size: clamp(22px,2vw,29px);
+        font-weight: 800;
+        margin: 0;
+        letter-spacing: -.45px;
+        overflow-wrap: anywhere;
+    }
+
+    .detail-hero-note {
+        color: #bfd1e5;
+        font-size: 12px;
+        margin: 10px 0 0;
+    }
+
+    .detail-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 800;
+        padding: 10px 14px;
+        border-radius: 30px;
+        white-space: nowrap;
+    }
+
+        .detail-status-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .detail-status-badge.delivered {
+            background: #def8e9;
+            color: #087b50;
+        }
+
+        .detail-status-badge.returned {
+            background: #fff0df;
+            color: #a75a0d;
+        }
+
+        .detail-status-badge.failed {
+            background: #ffebeb;
+            color: #b52f3d;
+        }
+
+        .detail-status-badge.in-transit, .detail-status-badge.out-for-delivery {
+            background: #e9f2ff;
+            color: #265f9e;
+        }
+
+    .detail-info-grid {
+        display: grid;
+        grid-template-columns: repeat(3,minmax(0,1fr));
+        gap: 16px;
+    }
+
+    .detail-info-item {
+        min-width: 0;
+    }
+
+        .detail-info-item small {
+            display: block;
+            margin-bottom: 9px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #8a9ab0;
+        }
+
+        .detail-info-item strong {
+            font-size: 14px;
+            font-weight: 800;
+            color: #1b3552;
+            overflow-wrap: anywhere;
+        }
+
+            .detail-info-item strong.price {
+                color: #df7c00;
+                font-size: 17px;
+            }
+
+    .detail-divider {
+        height: 1px;
+        background: #edf1f6;
+        margin: 24px 0;
+    }
+
+    .detail-route {
+        display: grid;
+        grid-template-columns: minmax(0,1fr) minmax(70px,.5fr) minmax(0,1fr);
+        align-items: center;
+        gap: 12px;
+    }
+
+    .detail-route-node {
+        min-width: 0;
+    }
+
+        .detail-route-node small {
+            display: block;
+            color: #8fa0b3;
+            font-size: 11px;
+            margin: 0 0 8px;
+        }
+
+        .detail-route-node strong {
+            font-size: 15px;
+            font-weight: 800;
+            color: #193552;
+            display: block;
+            overflow-wrap: anywhere;
+        }
+
+    .detail-route-line {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: #fd8b00;
+    }
+
+        .detail-route-line::before, .detail-route-line::after {
+            content: '';
+            height: 1px;
+            flex: 1;
+            background: #dbe5f0;
+        }
+
+        .detail-route-line .material-symbols-outlined {
+            font-size: 22px;
+        }
+
+    .detail-route-node:last-child {
+        text-align: right;
+    }
+
+    .detail-timeline {
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+
+        .detail-timeline li {
+            display: grid;
+            grid-template-columns: 28px minmax(0,1fr);
+            gap: 16px;
+            position: relative;
+            min-height: 86px;
+        }
+
+            .detail-timeline li:not(:last-child)::before {
+                content: '';
+                position: absolute;
+                width: 2px;
+                background: #e2eaf3;
+                top: 25px;
+                bottom: -1px;
+                left: 13px;
+            }
+
+    .detail-timeline-dot {
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: #edf3fa;
+        color: #44719d;
+        display: grid;
+        place-items: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    .detail-timeline li:first-child .detail-timeline-dot {
+        background: #fff0df;
+        color: #e58306;
+    }
+
+    .detail-timeline-dot .material-symbols-outlined {
+        font-size: 17px;
+    }
+
+    .detail-timeline-content {
+        padding: 2px 0 23px;
+        min-width: 0;
+    }
+
+    .detail-timeline-top {
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .detail-timeline-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: #213b57;
+        margin: 0 0 7px;
+    }
+
+    .detail-timeline-date {
+        font-size: 11px;
+        font-weight: 700;
+        color: #8698ac;
+        white-space: nowrap;
+    }
+
+    .detail-timeline-description {
+        font-size: 12px;
+        line-height: 1.7;
+        margin: 0;
+        color: #697f97;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .detail-timeline-old {
+        font-size: 11px;
+        color: #8293a9;
+        margin: 8px 0 0;
+    }
+
+    .detail-empty {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        gap: 10px;
+        color: #8397ad;
+        padding: 30px 10px;
+        text-align: center;
+        font-size: 12px;
+    }
+
+        .detail-empty .material-symbols-outlined {
+            font-size: 35px;
+            color: #9cafc4;
+        }
+
+    .detail-side {
+        position: sticky;
+        top: 22px;
+        min-width: 0;
+    }
+
+    .detail-qr-header {
+        background: linear-gradient(140deg,#0b1c30,#1b3958);
+        padding: 24px 25px;
+        color: #fff;
+    }
+
+        .detail-qr-header p {
+            color: #ffad47;
+            font-size: 10px;
+            letter-spacing: 1px;
+            font-weight: 800;
+            margin: 0 0 9px;
+        }
+
+        .detail-qr-header h2 {
+            font-size: 19px;
+            font-weight: 800;
+            margin: 0 0 8px;
+        }
+
+        .detail-qr-header span {
+            font-size: 12px;
+            color: #c5d4e5;
+            line-height: 1.55;
+            display: block;
+        }
+
+    .detail-qr-body {
+        padding: 25px;
+        text-align: center;
+    }
+
+    .detail-qr-box {
+        display: inline-flex;
+        background: #fff;
+        border: 1px solid #e5ebf2;
+        border-radius: 15px;
+        padding: 14px;
+        box-shadow: 0 5px 18px rgba(13,32,52,.045);
+    }
+
+        .detail-qr-box img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+    .detail-qr-number {
+        margin: 16px 0 7px;
+        font-size: 14px;
+        font-weight: 800;
+        color: #1c3956;
+        overflow-wrap: anywhere;
+    }
+
+    .detail-qr-help {
+        font-size: 12px;
+        color: #8294a9;
+        line-height: 1.7;
+        margin: 0 0 20px;
+    }
+
+    .detail-qr-actions {
+        display: grid;
+        gap: 10px;
+    }
+
+        .detail-qr-actions .detail-button {
+            width: 100%;
+        }
+
+    .detail-side-tip {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        background: #f1f6fd;
+        padding: 13px 14px;
+        color: #6b829d;
+        text-align: left;
+        border-radius: 10px;
+        font-size: 11px;
+        line-height: 1.65;
+        margin-top: 20px;
+    }
+
+        .detail-side-tip .material-symbols-outlined {
+            font-size: 18px;
+            flex-shrink: 0;
+            color: #6283a6;
+        }
+
+    @@media (max-width: 1120px) {
+        .detail-grid {
+            grid-template-columns: minmax(0,1fr) minmax(280px,.78fr);
+            gap: 15px;
+        }
+
+        .detail-info-grid {
+            grid-template-columns: repeat(2,minmax(0,1fr));
+        }
+    }
+
+    @@media (max-width: 850px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .detail-side {
+            position: static;
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .detail-heading {
+            margin-bottom: 19px;
+        }
+
+        .detail-header-actions, .detail-button {
+            width: 100%;
+        }
+
+        .detail-tracking-hero {
+            padding: 22px 19px;
+        }
+
+        .detail-card-head, .detail-card-body {
+            padding: 19px;
+        }
+
+        .detail-info-grid {
+            gap: 18px;
+        }
+
+        .detail-route {
+            grid-template-columns: minmax(0,1fr) 45px minmax(0,1fr);
+            gap: 8px;
+        }
+
+        .detail-route-node strong {
+            font-size: 12px;
+        }
+
+        .detail-timeline-top {
+            gap: 3px;
+        }
+    }
+
+    @@media print {
+        .shell-sidebar, .shell-topbar, .detail-header-actions, .detail-qr-actions {
+            display: none !important;
+        }
+
+        .shell {
+            display: block !important;
+        }
+
+        .shell-main {
+            padding: 0 !important;
+            max-width: none !important;
+        }
+
+        .detail-grid {
+            display: block !important;
+        }
+
+        .detail-side {
+            position: static !important;
+            margin-top: 16px;
+        }
+
+        .detail-card {
+            box-shadow: none !important;
+            break-inside: avoid;
+        }
+    }
+</style>
+
+<section class="detail-page">
+    <div class="detail-heading">
+        <div>
+            <p class="detail-kicker">CARGOTRACK / KARGO OPERASYONLARI</p>
+            <h1>Kargo Detayı</h1>
+            <p>Gönderinin bilgilerini, güncel durumunu ve hareket geçmişini inceleyin.</p>
+        </div>
+        <div class="detail-header-actions">
+            <a asp-controller="AdminCargos" asp-action="Index" class="detail-button">
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+                Kargo Yönetimine Dön
+            </a>
             @if (!isCompleted)
             {
-                <a asp-controller="AdminCargos"
-                   asp-action="Status"
-                   asp-route-id="@Model.Id"
-                   class="btn btn-primary">
+                <a asp-controller="AdminCargos" asp-action="Status" asp-route-id="@Model.Id" class="detail-button orange">
+                    <span class="material-symbols-outlined" aria-hidden="true">sync_alt</span>
                     Durumu Değiştir
                 </a>
             }
-
-            <a asp-controller="Dashboard"
-               asp-action="Index"
-               class="btn btn-secondary">
-                Geri Dön
-            </a>
-
         </div>
     </div>
 
-    <!-- KARGO HAREKET GEÇMİŞİ -->
-    <h3>Hareket Geçmişi</h3>
+    <div class="detail-grid">
+        <div class="detail-stack">
+            <!-- TAKİP NUMARASI VE ANLIK DURUM -->
+            <article class="detail-card">
+                <div class="detail-tracking-hero">
+                    <div>
+                        <p class="detail-hero-caption">GÖNDERİ TAKİP NUMARASI</p>
+                        <h2 class="detail-tracking-number">@Model.TrackingNumber</h2>
+                        <p class="detail-hero-note">Kargonun mevcut operasyon durumu</p>
+                    </div>
+                    <span class="detail-status-badge @currentStyle">@currentStatus</span>
+                </div>
+                <div class="detail-card-body">
+                    <div class="detail-info-grid">
+                        <div class="detail-info-item">
+                            <small>Oluşturulma Tarihi</small>
+                            <strong>@(Model.CreatedDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm", tr))</strong>
+                        </div>
+                        <div class="detail-info-item">
+                            <small>Tahmini Teslimat</small>
+                            <strong>@(Model.EstimatedDeliveryDate.ToLocalTime().ToString("dd.MM.yyyy", tr))</strong>
+                        </div>
+                        <div class="detail-info-item">
+                            <small>Toplam Ücret</small>
+                            <strong class="price">@(Model.TotalPrice.ToString("N2", tr)) TL</strong>
+                        </div>
+                    </div>
+                    <div class="detail-divider"></div>
+                    <div class="detail-route">
+                        <div class="detail-route-node">
+                            <small>ÇIKIŞ ŞUBESİ</small>
+                            <strong>@Model.OriginBranchName</strong>
+                        </div>
+                        <div class="detail-route-line" aria-hidden="true">
+                            <span class="material-symbols-outlined">local_shipping</span>
+                        </div>
+                        <div class="detail-route-node">
+                            <small>VARIŞ ŞUBESİ</small>
+                            <strong>@Model.DestinationBranchName</strong>
+                        </div>
+                    </div>
+                </div>
+            </article>
 
-    @if (Model.Movements == null || !Model.Movements.Any())
-    {
-        <div class="alert alert-info">
-            Henüz hareket kaydı bulunmuyor.
+            <!-- GERÇEK KARGO HAREKETLERİ -->
+            <article class="detail-card">
+                <div class="detail-card-head">
+                    <span class="detail-card-head-icon"><span class="material-symbols-outlined" aria-hidden="true">route</span></span>
+                    <div>
+                        <h2>Kargo Hareket Geçmişi</h2>
+                        <p>Veritabanına kaydedilmiş durum değişiklikleri, en yeniden eskiye</p>
+                    </div>
+                </div>
+                <div class="detail-card-body">
+                    @if (movements == null || movements.Count == 0)
+                    {
+                        <div class="detail-empty">
+                            <span class="material-symbols-outlined" aria-hidden="true">history</span>
+                            <span>Bu kargo için henüz hareket kaydı bulunmuyor.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <ol class="detail-timeline">
+                            @foreach (var movement in movements)
+                            {
+                                <li>
+                                    <span class="detail-timeline-dot">
+                                        <span class="material-symbols-outlined" aria-hidden="true">check</span>
+                                    </span>
+                                    <div class="detail-timeline-content">
+                                        <div class="detail-timeline-top">
+                                            <h3 class="detail-timeline-title">@StatusName(movement.NewStatus)</h3>
+                                            <time class="detail-timeline-date">@(movement.MovementDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm", tr))</time>
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(movement.Description))
+                                        {
+                                            <p class="detail-timeline-description">@movement.Description</p>
+                                        }
+                                        @if (movement.OldStatus.HasValue)
+                                        {
+                                            <p class="detail-timeline-old">Önceki durum: @StatusName(movement.OldStatus.Value)</p>
+                                        }
+                                    </div>
+                                </li>
+                            }
+                        </ol>
+                    }
+                </div>
+            </article>
         </div>
-    }
-    else
-    {
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Önceki Durum</th>
-                    <th>Yeni Durum</th>
-                    <th>Tarih</th>
-                    <th>Açıklama</th>
-                </tr>
-            </thead>
 
-            <tbody>
-                @foreach (var movement in Model.Movements)
-                {
-                    <tr>
-                        <td>
-                            @(movement.OldStatus?.ToString() ?? "-")
-                        </td>
-
-                        <td>
-                            @movement.NewStatus
-                        </td>
-
-                        <td>
-                            @(movement.MovementDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm"))
-                        </td>
-
-                        <td>
-                            @movement.Description
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-
-    <!-- QR KOD BÖLÜMÜ -->
-    <div style="margin-top:30px;
-        padding:25px;
-        background:white;
-        border:1px solid #ddd;
-        border-radius:10px;
-        text-align:center;">
-
-        <h3>QR Kod ile Kargo Takibi</h3>
-
-        <p>
-            Takip Numarası:
-            <strong>@Model.TrackingNumber</strong>
-        </p>
-
-        <img src="@Url.Action(
-                    "Image",
-                    "CargoQr",
-                    new { trackingNumber = Model.TrackingNumber })"
-             alt="Kargo Takip QR Kodu"
-             width="180"
-             height="180"
-             style="display:block; margin:20px auto;" />
-
-        <p>
-            QR kodu telefonunuzla okutarak
-            kargonun güncel durumunu takip edebilirsiniz.
-        </p>
-
-        <a href="@Url.Action(
-                    "Result",
-                    "CargoQr",
-                    new { trackingNumber = Model.TrackingNumber })"
-           target="_blank"
-           rel="noopener noreferrer"
-           class="btn btn-primary">
-            Takip Sayfasını Aç
-        </a>
-
+        <!-- QR İLE HERKESE AÇIK KARGO TAKİBİ -->
+        <aside class="detail-side">
+            <article class="detail-card">
+                <div class="detail-qr-header">
+                    <p>CARGOTRACK / DİJİTAL TAKİP</p>
+                    <h2>QR Kod ile Kargo Takibi</h2>
+                    <span>Kodu okutarak gönderinin herkese açık takip ekranını görüntüleyin.</span>
+                </div>
+                <div class="detail-qr-body">
+                    <div class="detail-qr-box">
+                        <img src="@qrImageUrl" width="190" height="190" alt="@Model.TrackingNumber için QR kod" loading="lazy" />
+                    </div>
+                    <p class="detail-qr-number">@Model.TrackingNumber</p>
+                    <p class="detail-qr-help">Gönderi durumunu ve hareket geçmişini takip etmek için QR kodunu okutun.</p>
+                    <div class="detail-qr-actions">
+                        <a href="@trackingUrl" target="_blank" rel="noopener noreferrer" class="detail-button orange">
+                            <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+                            Takip Sayfasını Aç
+                        </a>
+                        <button type="button" onclick="window.print()" class="detail-button">
+                            <span class="material-symbols-outlined" aria-hidden="true">print</span>
+                            Detayları Yazdır
+                        </button>
+                    </div>
+                    <div class="detail-side-tip">
+                        <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                        <span>QR bağlantısı genel takip sayfasını açar; müşteri adresi ve telefon gibi özel bilgiler burada paylaşılmaz. Telefonla okumak için uygulamanın telefonun erişebileceği bir adreste çalışması gerekir.</span>
+                    </div>
+                </div>
+            </article>
+        </aside>
     </div>
+</section>
 
-</div>

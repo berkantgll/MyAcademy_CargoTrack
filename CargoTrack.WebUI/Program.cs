@@ -33,6 +33,7 @@ builder.Services.AddScoped<ICargoRepository, CargoRepository>();
 // Pricing
 builder.Services.AddScoped<ICargoPricingService, CargoPricingService>();
 builder.Services.AddScoped<ICargoPriceService, CargoPriceService>();
+builder.Services.AddScoped<IBranchUsageRepository, BranchUsageRepository>();
 
 // Validation
 builder.Services.AddScoped<

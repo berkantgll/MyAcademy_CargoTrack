@@ -1,0 +1,708 @@
+﻿@* CargoTrack ortak panel tasarımı. Login / Register bu layout'u kullanmaz. *@
+@{
+    bool isAdmin = User.IsInRole("Admin");
+    bool isManager = User.IsInRole("Manager");
+    bool isUser = User.IsInRole("User");
+
+    var roleName = isAdmin ? "Sistem Yöneticisi"
+        : isManager ? "Şube Yöneticisi"
+        : isUser ? "Müşteri" : "Kullanıcı";
+
+    var accountName = User.Identity?.Name ?? "Kullanıcı";
+    var initial = accountName.Length > 0
+        ? accountName.Substring(0, 1).ToUpperInvariant()
+        : "K";
+
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var pageTitle = ViewData["Title"]?.ToString() ?? "Panel";
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@pageTitle | CargoTrack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Material+Symbols+Outlined&display=swap" rel="stylesheet" />
+    @* Eski CRUD formlarımız Bootstrap sınıfları kullanıyor. *@
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+
+            :root {
+                --navy: #0b1c30;
+                --navy-light: #152c48;
+                --orange: #fd8b00;
+                --background: #f8f9ff;
+                --border: #e4eaf2;
+                --muted: #76869b;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                background: var(--background);
+                color: var(--navy);
+                font-family: 'Hanken Grotesk', Arial, sans-serif;
+            }
+
+            a {
+                text-decoration: none;
+            }
+
+            button {
+                font: inherit;
+                cursor: pointer;
+            }
+
+            .material-symbols-outlined {
+                font-size: 21px;
+                font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            }
+
+            /* APPLICATION SHELL */
+            .shell {
+                display: grid;
+                grid-template-columns: 254px minmax(0, 1fr);
+                min-height: 100vh;
+            }
+
+            .shell-sidebar {
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                padding: 27px 16px 20px;
+                background: linear-gradient(165deg, #0b1c30, #142d4b);
+                color: white;
+                overflow-y: auto;
+            }
+
+            .shell-brand {
+                display: flex;
+                align-items: center;
+                gap: 11px;
+                margin: 0 8px 46px;
+                color: white;
+                font-size: 22px;
+                font-weight: 800;
+                letter-spacing: -.7px;
+            }
+
+            .shell-brand-icon {
+                height: 40px;
+                width: 40px;
+                flex-shrink: 0;
+                display: grid;
+                place-items: center;
+                background: var(--orange);
+                color: var(--navy);
+                border-radius: 11px;
+            }
+
+                .shell-brand-icon .material-symbols-outlined {
+                    font-size: 24px;
+                }
+
+            .shell-nav-label {
+                padding: 0 14px;
+                color: #7992af;
+                font-size: 10px;
+                letter-spacing: 1.5px;
+                font-weight: 800;
+                margin-bottom: 13px;
+            }
+
+            .shell-nav {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+
+                .shell-nav a {
+                    display: flex;
+                    align-items: center;
+                    gap: 13px;
+                    min-height: 46px;
+                    padding: 10px 13px;
+                    color: #b7c9dd;
+                    border-radius: 11px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    transition: background .15s, color .15s;
+                    white-space: nowrap;
+                }
+
+                    .shell-nav a:hover {
+                        background: rgba(255,255,255,.08);
+                        color: white;
+                    }
+
+                    .shell-nav a.active {
+                        background: rgba(253,139,0,.15);
+                        color: #ffad47;
+                        border-left: 3px solid var(--orange);
+                        padding-left: 10px;
+                    }
+
+                    .shell-nav a .material-symbols-outlined {
+                        flex-shrink: 0;
+                    }
+
+            .shell-nav-divider {
+                height: 1px;
+                background: rgba(255,255,255,.10);
+                margin: 17px 11px 22px;
+            }
+
+            .shell-sidebar-bottom {
+                margin-top: auto;
+                padding: 22px 13px 0;
+                color: #7e96b2;
+                font-size: 11px;
+                line-height: 1.6;
+            }
+
+            .shell-content {
+                min-width: 0;
+            }
+
+            /* TOP BAR */
+            .shell-topbar {
+                min-height: 76px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 18px;
+                padding: 13px 33px;
+                background: white;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .shell-breadcrumb {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 13px;
+                color: #9aa8b9;
+                font-weight: 600;
+            }
+
+                .shell-breadcrumb strong {
+                    color: var(--navy);
+                    font-weight: 800;
+                }
+
+            .shell-top-actions {
+                display: flex;
+                align-items: center;
+                gap: 17px;
+            }
+
+            .shell-user {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .shell-avatar {
+                width: 37px;
+                height: 37px;
+                display: grid;
+                place-items: center;
+                flex-shrink: 0;
+                background: #ecf3fc;
+                color: #1b426b;
+                border: 1px solid #dce7f4;
+                border-radius: 11px;
+                font-size: 14px;
+                font-weight: 800;
+            }
+
+            .shell-user-name {
+                color: var(--navy);
+                font-weight: 800;
+                font-size: 12px;
+                overflow-wrap: anywhere;
+            }
+
+            .shell-user-role {
+                color: #8392a6;
+                font-size: 11px;
+                margin-top: 3px;
+            }
+
+            .shell-logout {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                background: #fff;
+                color: #4d6077;
+                padding: 10px 13px;
+                font-weight: 700;
+                font-size: 12px;
+            }
+
+                .shell-logout:hover {
+                    background: #f3f6fb;
+                }
+
+                .shell-logout .material-symbols-outlined {
+                    font-size: 18px;
+                }
+
+            /* CONTENT */
+            .shell-main {
+                width: 100%;
+                max-width: 1750px;
+                margin: 0 auto;
+                padding: 26px 34px 62px;
+            }
+
+            .shell-page-bar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 18px;
+                margin: 0 0 7px;
+            }
+
+            .shell-welcome {
+                margin: 0;
+                font-size: 13px;
+                color: #72849b;
+            }
+
+            .shell-role-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                background: #edf3fb;
+                color: #244d74;
+                padding: 8px 12px;
+                border-radius: 30px;
+                font-size: 11px;
+                font-weight: 800;
+            }
+
+                .shell-role-pill .material-symbols-outlined {
+                    font-size: 16px;
+                }
+
+            .shell-alert {
+                padding: 13px 17px;
+                border-radius: 10px;
+                margin: 14px 0;
+                font-size: 13px;
+                font-weight: 600;
+            }
+
+                .shell-alert.success {
+                    color: #176f4f;
+                    border: 1px solid #bfe8d6;
+                    background: #eaf9f1;
+                }
+
+                .shell-alert.error {
+                    color: #a22e2e;
+                    border: 1px solid #ffd2d2;
+                    background: #fff1f1;
+                }
+
+            .shell-section-head {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 14px;
+                flex-wrap: wrap;
+                margin: 30px 0 15px;
+            }
+
+                .shell-section-head h2 {
+                    margin: 0 0 5px;
+                    font-size: 21px;
+                    font-weight: 800;
+                    letter-spacing: -.45px;
+                }
+
+                .shell-section-head p {
+                    margin: 0;
+                    color: #8494a8;
+                    font-size: 12px;
+                }
+
+            .shell-button-primary {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                color: #162a41;
+                background: var(--orange);
+                border-radius: 10px;
+                padding: 12px 17px;
+                font-size: 12px;
+                font-weight: 800;
+                white-space: nowrap;
+            }
+
+                .shell-button-primary:hover {
+                    background: #ffac3d;
+                }
+
+                .shell-button-primary .material-symbols-outlined {
+                    font-size: 19px;
+                }
+
+            .shell-table-card {
+                overflow: hidden;
+                background: #fff;
+                border: 1px solid #e5eaf1;
+                border-radius: 16px;
+                box-shadow: 0 4px 16px rgba(12,32,55,.025);
+            }
+
+            .shell-table-scroll {
+                overflow-x: auto;
+            }
+
+            .shell-shipment-table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 730px;
+            }
+
+                .shell-shipment-table th {
+                    text-align: left;
+                    background: #f8faff;
+                    color: #8899af;
+                    padding: 17px 18px;
+                    font-size: 11px;
+                    font-weight: 800;
+                    letter-spacing: .4px;
+                    border-bottom: 1px solid #e8edf4;
+                }
+
+                .shell-shipment-table td {
+                    text-align: left;
+                    color: #30455e;
+                    padding: 16px 18px;
+                    font-size: 13px;
+                    border-bottom: 1px solid #edf1f6;
+                }
+
+                .shell-shipment-table tr:last-child td {
+                    border-bottom: 0;
+                }
+
+                .shell-shipment-table tbody tr:hover {
+                    background: #fbfcff;
+                }
+
+            .shell-tracking-link {
+                color: #244d80;
+                font-weight: 800;
+            }
+
+                .shell-tracking-link:hover {
+                    color: #df7c00;
+                }
+
+            .shell-status {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                border-radius: 40px;
+                padding: 7px 10px;
+                font-size: 11px;
+                font-weight: 800;
+                white-space: nowrap;
+                background: #e9f2ff;
+                color: #2b6299;
+            }
+
+                .shell-status::before {
+                    content: '';
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 50%;
+                    background: currentColor;
+                }
+
+                .shell-status.done {
+                    background: #e8f8f0;
+                    color: #17825b;
+                }
+
+                .shell-status.returned {
+                    background: #fff0e5;
+                    color: #c76d16;
+                }
+
+                .shell-status.failed {
+                    background: #fff0f0;
+                    color: #ca4141;
+                }
+
+            .shell-actions {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+
+            .shell-action {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid #e0e7f0;
+                border-radius: 8px;
+                background: white;
+                color: #274564;
+                padding: 8px 10px;
+                font-size: 11px;
+                font-weight: 800;
+                white-space: nowrap;
+            }
+
+                .shell-action:hover {
+                    background: #edf4ff;
+                }
+
+                .shell-action.edit {
+                    color: #168363;
+                }
+
+                .shell-action.delete {
+                    color: #c74242;
+                    border-color: #f3d4d4;
+                }
+
+                    .shell-action.delete:hover {
+                        background: #fff2f2;
+                    }
+
+            .shell-actions form {
+                margin: 0;
+            }
+
+            .shell-empty {
+                padding: 44px 24px;
+                text-align: center;
+                color: #8999ad;
+                font-size: 13px;
+            }
+
+                .shell-empty .material-symbols-outlined {
+                    font-size: 35px;
+                    color: #9db1ca;
+                    margin-bottom: 12px;
+                }
+
+            @@media (max-width: 1100px) {
+                .shell {
+                    grid-template-columns: 225px minmax(0, 1fr);
+                }
+
+                .shell-main {
+                    padding: 25px 22px 48px;
+                }
+
+                .shell-topbar {
+                    padding: 12px 22px;
+                }
+            }
+
+            @@media (max-width: 760px) {
+                .shell {
+                    display: block;
+                }
+
+                .shell-sidebar {
+                    position: static;
+                    width: 100%;
+                    height: auto;
+                    min-height: 0;
+                    padding: 14px 15px 11px;
+                    overflow: visible;
+                }
+
+                .shell-brand {
+                    margin: 0 0 12px;
+                    font-size: 18px;
+                }
+
+                .shell-brand-icon {
+                    width: 34px;
+                    height: 34px;
+                }
+
+                .shell-nav-label, .shell-nav-divider, .shell-sidebar-bottom {
+                    display: none;
+                }
+
+                .shell-nav {
+                    flex-direction: row;
+                    overflow-x: auto;
+                    scrollbar-width: thin;
+                    padding-bottom: 3px;
+                }
+
+                    .shell-nav a {
+                        flex: 0 0 auto;
+                        min-height: 38px;
+                        padding: 8px 12px;
+                        font-size: 12px;
+                    }
+
+                        .shell-nav a.active {
+                            padding-left: 9px;
+                        }
+
+                        .shell-nav a .material-symbols-outlined {
+                            font-size: 18px;
+                        }
+
+                .shell-topbar {
+                    min-height: 64px;
+                    padding: 11px 16px;
+                }
+
+                .shell-user {
+                    display: none;
+                }
+
+                .shell-main {
+                    padding: 18px 15px 40px;
+                }
+            }
+
+            .shell-brand,
+            .shell-brand:hover,
+            .shell-brand:focus {
+                color: #ffffff;
+                text-decoration: none;
+            }
+
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <!-- SOL YAN MENÜ -->
+        <aside class="shell-sidebar">
+            <a asp-controller="Dashboard" asp-action="Index" class="shell-brand">
+                <span class="shell-brand-icon">
+                    <span class="material-symbols-outlined">package_2</span>
+                </span>
+                CargoTrack
+            </a>
+
+            <div class="shell-nav-label">YÖNETİM</div>
+            <nav class="shell-nav" aria-label="Ana menü">
+                <a asp-controller="Dashboard" asp-action="Index" class="@(currentController == "Dashboard" ? "active" : "")">
+                    <span class="material-symbols-outlined">grid_view</span>
+                    Genel Bakış
+                </a>
+
+                @if (isAdmin)
+                {
+                    <a asp-controller="AdminCargos" asp-action="Index" class="@(currentController == "AdminCargos" && currentAction != "Create" ? "active" : "")">
+                        <span class="material-symbols-outlined">inventory_2</span>
+                        Kargo Yönetimi
+                    </a>
+                    <a asp-controller="AdminCargos" asp-action="Create" class="@(currentController == "AdminCargos" && currentAction == "Create" ? "active" : "")">
+                        <span class="material-symbols-outlined">add_box</span>
+                        Yeni Kargo
+                    </a>
+                    <a asp-controller="AdminReports" asp-action="Index" class="@(currentController == "AdminReports" ? "active" : "")">
+                        <span class="material-symbols-outlined">bar_chart</span>
+                        Operasyon Raporları
+                    </a>
+                    <a asp-controller="AdminAuditLogs" asp-action="Index" class="@(currentController == "AdminAuditLogs" ? "active" : "")">
+                        <span class="material-symbols-outlined">history</span>
+                        İşlem Kayıtları
+                    </a>
+                    <a asp-controller="AdminBranches" asp-action="Index" class="@(currentController == "AdminBranches" ? "active" : "")">
+                        <span class="material-symbols-outlined">storefront</span>
+                        Şube Yönetimi
+                    </a>
+                    <a asp-controller="AdminUsers" asp-action="Index" class="@(currentController == "AdminUsers" ? "active" : "")">
+                        <span class="material-symbols-outlined">manage_accounts</span>
+                        Müdür Atamaları
+                    </a>
+                }
+                else if (isManager)
+                {
+                    <a asp-controller="ManagerCargos" asp-action="Index" class="@(currentController == "ManagerCargos" ? "active" : "")">
+                        <span class="material-symbols-outlined">local_shipping</span>
+                        Şube Kargoları
+                    </a>
+                }
+                else if (isUser)
+                {
+                    <a asp-controller="UserCargos" asp-action="Index" class="@(currentController == "UserCargos" ? "active" : "")">
+                        <span class="material-symbols-outlined">package</span>
+                        Kargolarım
+                    </a>
+                }
+            </nav>
+
+            <div class="shell-nav-divider"></div>
+            <div class="shell-nav-label">DİĞER</div>
+            <nav class="shell-nav" aria-label="Diğer bağlantılar">
+                <a asp-controller="Tracking" asp-action="Index" class="@(currentController == "Tracking" ? "active" : "")">
+                    <span class="material-symbols-outlined">search</span>
+                    Kargo Takip
+                </a>
+            </nav>
+
+            <div class="shell-sidebar-bottom">
+                CargoTrack<br />Kargo ve operasyon yönetimi
+            </div>
+        </aside>
+
+        <!-- SAĞ UYGULAMA ALANI -->
+        <div class="shell-content">
+            <header class="shell-topbar">
+                <div class="shell-breadcrumb">
+                    <span>Panel</span>
+                    <span>/</span>
+                    <strong>@pageTitle</strong>
+                </div>
+
+                <div class="shell-top-actions">
+                    <div class="shell-user">
+                        <span class="shell-avatar">@initial</span>
+                        <div>
+                            <div class="shell-user-name">@accountName</div>
+                            <div class="shell-user-role">@roleName</div>
+                        </div>
+                    </div>
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="shell-logout">
+                            <span class="material-symbols-outlined">logout</span>
+                            Çıkış Yap
+                        </button>
+                    </form>
+                </div>
+            </header>
+
+            <main class="shell-main">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+

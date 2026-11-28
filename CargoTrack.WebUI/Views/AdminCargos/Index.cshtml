@@ -2,139 +2,754 @@
 @model CargoTrack.WebUI.Models.AdminCargoSearchVm
 
 @{
+    Layout = "_PanelLayout";
     ViewData["Title"] = "Kargo Yönetimi";
+
+    var culture = new System.Globalization.CultureInfo("tr-TR");
+    var shownCount = Model.Items?.Count() ?? 0;
+    var firstPage = Math.Max(1, Model.Page - 2);
+    var lastPage = Math.Min(Model.TotalPages, Math.Max(5, Model.Page + 2));
+    firstPage = Math.Max(1, lastPage - 4);
 }
 
-<div class="container py-4">
-
-    <h2>Kargo Yönetimi</h2>
-
-    <form asp-controller="AdminCargos"
-          asp-action="Index"
-          method="get"
-          class="row g-3 mb-4">
-
-        <div class="col-md-4">
-            <label>Takip Numarası</label>
-
-            <input type="text"
-                   name="search"
-                   value="@Model.Search"
-                   class="form-control"
-                   placeholder="MYC-2026-..." />
-        </div>
-
-        <div class="col-md-3">
-            <label>Durum</label>
-
-            <select name="status" class="form-select">
-                <option value="">Tüm Durumlar</option>
-
-                @foreach (var status in Enum.GetValues<CargoStatus>())
-                {
-                    <option value="@status"
-                            selected="@(Model.Status == status)">
-                        @status
-                    </option>
-                }
-            </select>
-        </div>
-
-        <div class="col-md-3">
-            <label>Şube</label>
-
-            <select name="branchId"
-                    asp-items="Model.Branches"
-                    class="form-select">
-                <option value="">Tüm Şubeler</option>
-            </select>
-        </div>
-
-        <div class="col-md-2 d-flex align-items-end">
-            <button type="submit" class="btn btn-primary w-100">
-                Ara
-            </button>
-        </div>
-
-    </form>
-
-    <p>
-        <strong>Toplam kayıt:</strong> @Model.TotalCount
-    </p>
-
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Takip Numarası</th>
-                <th>Durum</th>
-                <th>Çıkış</th>
-                <th>Varış</th>
-                <th>İşlem</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            @foreach (var cargo in Model.Items)
-            {
-                <tr>
-                    <td>@cargo.TrackingNumber</td>
-                    <td>@cargo.Status</td>
-                    <td>@cargo.OriginBranchName</td>
-                    <td>@cargo.DestinationBranchName</td>
-                    <td>
-                        <a asp-action="Details"
-                           asp-route-id="@cargo.Id">
-                            Detay
-                        </a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-
-    @if (!Model.Items.Any())
-    {
-        <p>Aradığınız kriterlere uygun kargo bulunamadı.</p>
+<style>
+    .cargo-page {
+        color: #0b1c30;
     }
 
-    @if (Model.TotalPages > 1)
-    {
-        <div class="d-flex gap-3 align-items-center">
+        .cargo-page * {
+            box-sizing: border-box;
+        }
 
-            @if (Model.Page > 1)
-            {
-                <a asp-action="Index"
-                   asp-route-search="@Model.Search"
-                   asp-route-status="@Model.Status"
-                   asp-route-branchId="@Model.BranchId"
-                   asp-route-page="@(Model.Page - 1)">
-                    Önceki
-                </a>
-            }
-
-            <span>
-                Sayfa @Model.Page / @Model.TotalPages
-            </span>
-
-            @if (Model.Page < Model.TotalPages)
-            {
-                <a asp-action="Index"
-                   asp-route-search="@Model.Search"
-                   asp-route-status="@Model.Status"
-                   asp-route-branchId="@Model.BranchId"
-                   asp-route-page="@(Model.Page + 1)">
-                    Sonraki
-                </a>
-            }
-
-        </div>
+    .cargo-eyebrow {
+        color: #e88308;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        margin-bottom: 10px;
     }
 
-    <hr />
+    .cargo-page-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin: 6px 0 27px;
+    }
 
-    <a asp-controller="Dashboard"
-       asp-action="Index">
-        Dashboard'a Dön
-    </a>
+        .cargo-page-heading h1 {
+            font-size: clamp(26px, 3vw, 34px);
+            font-weight: 800;
+            letter-spacing: -1.2px;
+            margin: 0 0 8px;
+        }
 
-</div>
+        .cargo-page-heading p {
+            color: #8291a5;
+            font-size: 14px;
+            margin: 0;
+        }
+
+    .cargo-new-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        padding: 13px 18px;
+        border-radius: 11px;
+        background: #fd8b00;
+        color: #0b1c30;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 800;
+        white-space: nowrap;
+        transition: background .15s, transform .15s;
+    }
+
+        .cargo-new-button:hover {
+            background: #ffab3c;
+            color: #0b1c30;
+            transform: translateY(-1px);
+        }
+
+        .cargo-new-button .material-symbols-outlined {
+            font-size: 19px;
+        }
+
+    .cargo-card {
+        background: #fff;
+        border: 1px solid #e3eaf3;
+        border-radius: 17px;
+        box-shadow: 0 4px 18px rgba(12,32,55,.03);
+    }
+
+    .cargo-filters {
+        padding: 24px;
+        margin-bottom: 22px;
+    }
+
+    .cargo-card-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .cargo-card-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        font-size: 16px;
+        font-weight: 800;
+    }
+
+    .cargo-title-icon {
+        width: 36px;
+        height: 36px;
+        display: inline-grid;
+        place-items: center;
+        background: #fff1df;
+        color: #dc7c00;
+        border-radius: 10px;
+    }
+
+        .cargo-title-icon .material-symbols-outlined {
+            font-size: 21px;
+        }
+
+    .cargo-muted {
+        color: #8b9aaf;
+        font-size: 12px;
+    }
+
+    .cargo-filter-grid {
+        display: grid;
+        grid-template-columns: 1.35fr 1fr 1fr auto;
+        gap: 15px;
+        align-items: end;
+    }
+
+    .cargo-field {
+        min-width: 0;
+    }
+
+        .cargo-field label {
+            display: block;
+            margin-bottom: 9px;
+            color: #30435e;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+    .cargo-input, .cargo-select {
+        width: 100%;
+        height: 47px;
+        background: #fff;
+        color: #0b1c30;
+        border: 1px solid #dfe7f1;
+        border-radius: 10px;
+        padding: 0 13px;
+        outline: none;
+        font: inherit;
+        font-size: 13px;
+    }
+
+        .cargo-input::placeholder {
+            color: #a1afbf;
+        }
+
+        .cargo-input:focus, .cargo-select:focus {
+            border-color: #fd8b00;
+            box-shadow: 0 0 0 3px rgba(253,139,0,.12);
+        }
+
+    .cargo-filter-actions {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+
+    .cargo-search-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 47px;
+        padding: 0 19px;
+        background: #0b1c30;
+        color: white;
+        border: 0;
+        border-radius: 10px;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+        .cargo-search-button:hover {
+            background: #1d3b5c;
+        }
+
+        .cargo-search-button .material-symbols-outlined {
+            font-size: 18px;
+        }
+
+    .cargo-reset {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 47px;
+        padding: 0 14px;
+        text-decoration: none;
+        color: #58708c;
+        background: #f3f6fb;
+        border: 1px solid #e7edf5;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+        .cargo-reset:hover {
+            background: #eaf0f8;
+            color: #15334e;
+        }
+
+    .cargo-table-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        padding: 23px 24px 18px;
+        gap: 12px;
+    }
+
+        .cargo-table-head h2 {
+            font-weight: 800;
+            font-size: 18px;
+            margin: 0 0 6px;
+        }
+
+        .cargo-table-head p {
+            color: #8191a6;
+            font-size: 12px;
+            margin: 0;
+        }
+
+    .cargo-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #315273;
+        padding: 10px 13px;
+        border-radius: 9px;
+        background: #f0f5fc;
+    }
+
+        .cargo-count strong {
+            font-size: 14px;
+        }
+
+    .cargo-table-scroll {
+        overflow-x: auto;
+    }
+
+    .cargo-table {
+        width: 100%;
+        min-width: 800px;
+        border-collapse: collapse;
+        margin: 0;
+    }
+
+        .cargo-table thead th {
+            text-align: left;
+            background: #f8faff;
+            color: #8192a9;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .65px;
+            padding: 17px 22px;
+            border-top: 1px solid #edf1f6;
+            border-bottom: 1px solid #e5eaf2;
+            text-transform: uppercase;
+        }
+
+        .cargo-table tbody td {
+            padding: 18px 22px;
+            border-bottom: 1px solid #edf1f6;
+            font-size: 13px;
+            color: #40536a;
+            vertical-align: middle;
+        }
+
+        .cargo-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .cargo-table tbody tr:hover {
+            background: #fcfdff;
+        }
+
+    .cargo-tracking-cell {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .cargo-item-icon {
+        width: 36px;
+        height: 36px;
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+        color: #36618d;
+        border-radius: 10px;
+        background: #eff5fc;
+    }
+
+        .cargo-item-icon .material-symbols-outlined {
+            font-size: 19px;
+        }
+
+    .cargo-tracking-number {
+        color: #244c79;
+        font-size: 13px;
+        font-weight: 800;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+        .cargo-tracking-number:hover {
+            color: #dc7b00;
+        }
+
+    .cargo-branch {
+        font-weight: 650;
+        color: #304860;
+    }
+
+    .cargo-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 11px;
+        border-radius: 100px;
+        font-size: 11px;
+        font-weight: 800;
+        white-space: nowrap;
+        background: #eaf2ff;
+        color: #346194;
+    }
+
+        .cargo-status::before {
+            content: '';
+            height: 6px;
+            width: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .cargo-status.success {
+            background: #e5f8f0;
+            color: #18805d;
+        }
+
+        .cargo-status.returned {
+            background: #fff0e5;
+            color: #c36d1b;
+        }
+
+        .cargo-status.warning {
+            background: #fff1d9;
+            color: #9b6400;
+        }
+
+        .cargo-status.danger {
+            background: #fff0f0;
+            color: #c94747;
+        }
+
+    .cargo-table-actions {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+    }
+
+    .cargo-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border-radius: 8px;
+        padding: 8px 10px;
+        border: 1px solid #dfe7f1;
+        font-size: 11px;
+        font-weight: 800;
+        background: white;
+        color: #284f76;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+        .cargo-action:hover {
+            background: #eef4fc;
+            color: #173e62;
+        }
+
+        .cargo-action .material-symbols-outlined {
+            font-size: 16px;
+        }
+
+        .cargo-action.edit {
+            color: #16805e;
+        }
+
+            .cargo-action.edit:hover {
+                background: #eaf8f1;
+            }
+
+    .cargo-empty {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        padding: 58px 22px;
+        text-align: center;
+        color: #899aae;
+    }
+
+    .cargo-empty-icon {
+        width: 64px;
+        height: 64px;
+        display: grid;
+        place-items: center;
+        color: #8299b6;
+        background: #f2f6fc;
+        border-radius: 18px;
+        margin-bottom: 18px;
+    }
+
+        .cargo-empty-icon .material-symbols-outlined {
+            font-size: 31px;
+        }
+
+    .cargo-empty h3 {
+        color: #223c59;
+        font-weight: 800;
+        font-size: 17px;
+        margin: 0 0 7px;
+    }
+
+    .cargo-empty p {
+        font-size: 13px;
+        margin: 0 0 18px;
+    }
+
+    .cargo-footer {
+        padding: 18px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        border-top: 1px solid #edf1f6;
+    }
+
+    .cargo-page-info {
+        color: #8695a9;
+        font-size: 12px;
+    }
+
+    .cargo-pagination {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .cargo-page-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 35px;
+        height: 35px;
+        padding: 0 10px;
+        border: 1px solid #e1e8f1;
+        border-radius: 9px;
+        background: white;
+        text-decoration: none;
+        color: #526985;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+        .cargo-page-link:hover {
+            border-color: #fd8b00;
+            color: #c57205;
+        }
+
+        .cargo-page-link.active {
+            background: #0b1c30;
+            border-color: #0b1c30;
+            color: white;
+        }
+
+    @@media(max-width: 1280px) {
+        .cargo-filter-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .cargo-filter-actions {
+            grid-column: 1 / -1;
+            justify-content: flex-end;
+        }
+    }
+
+    @@media(max-width: 700px) {
+        .cargo-page-heading {
+            align-items: stretch;
+        }
+
+        .cargo-new-button {
+            width: 100%;
+        }
+
+        .cargo-filters {
+            padding: 17px;
+        }
+
+        .cargo-filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .cargo-filter-actions {
+            grid-column: auto;
+            justify-content: stretch;
+        }
+
+        .cargo-search-button, .cargo-reset {
+            flex: 1;
+        }
+
+        .cargo-table-head {
+            padding: 20px 17px 15px;
+        }
+
+        .cargo-footer {
+            padding: 16px;
+        }
+    }
+</style>
+
+<section class="cargo-page">
+    <div class="cargo-page-heading">
+        <div>
+            <div class="cargo-eyebrow">CARGOTRACK / OPERASYONLAR</div>
+            <h1>Kargo Yönetimi</h1>
+            <p>Tüm gönderilerinizi arayın, filtreleyin ve operasyon süreçlerini yönetin.</p>
+        </div>
+
+        <a asp-controller="AdminCargos" asp-action="Create" class="cargo-new-button">
+            <span class="material-symbols-outlined" aria-hidden="true">add_box</span>
+            Yeni Kargo Oluştur
+        </a>
+    </div>
+
+    <div class="cargo-card cargo-filters">
+        <div class="cargo-card-heading">
+            <h2 class="cargo-card-title">
+                <span class="cargo-title-icon"><span class="material-symbols-outlined" aria-hidden="true">tune</span></span>
+                Arama ve Filtreleme
+            </h2>
+            <span class="cargo-muted">Takip numarası, durum veya şubeye göre</span>
+        </div>
+
+        <form asp-controller="AdminCargos" asp-action="Index" method="get" class="cargo-filter-grid">
+            <div class="cargo-field">
+                <label for="cargoSearch">Takip Numarası</label>
+                <input id="cargoSearch" type="search" name="search" value="@Model.Search"
+                       class="cargo-input" placeholder="Örn: MYC-2026-308663" />
+            </div>
+
+            <div class="cargo-field">
+                <label for="cargoStatus">Kargo Durumu</label>
+                <select id="cargoStatus" name="status" class="cargo-select">
+                    <option value="">Tüm Durumlar</option>
+                    @foreach (var status in Enum.GetValues<CargoStatus>())
+                    {
+                        var statusText = status switch
+                        {
+                            CargoStatus.Created => "Oluşturuldu",
+                            CargoStatus.AtOriginBranch => "Çıkış Şubesinde",
+                            CargoStatus.AtTransferCenter => "Transfer Merkezinde",
+                            CargoStatus.AtDestinationBranch => "Varış Şubesinde",
+                            CargoStatus.OutForDelivery => "Dağıtıma Çıktı",
+                            CargoStatus.Delivered => "Teslim Edildi",
+                            CargoStatus.DeliveryFailed => "Teslim Edilemedi",
+                            CargoStatus.ReturnInProgress => "İade Sürecinde",
+                            CargoStatus.ReturnedToSender => "İade Edildi",
+                            _ => status.ToString()
+                        };
+                        <option value="@status" selected="@(Model.Status == status)">@statusText</option>
+                    }
+                </select>
+            </div>
+
+            <div class="cargo-field">
+                <label for="cargoBranch">Şube</label>
+                <select id="cargoBranch" name="branchId" asp-items="Model.Branches" class="cargo-select">
+                    <option value="">Tüm Şubeler</option>
+                </select>
+            </div>
+
+            <div class="cargo-filter-actions">
+                <button type="submit" class="cargo-search-button">
+                    <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                    Filtrele
+                </button>
+                <a asp-controller="AdminCargos" asp-action="Index" class="cargo-reset">Temizle</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="cargo-card">
+        <div class="cargo-table-head">
+            <div>
+                <h2>Gönderi Listesi</h2>
+                <p>Güncel kargo kayıtları ve işlem seçenekleri</p>
+            </div>
+            <div class="cargo-count">
+                Toplam kayıt <strong>@Model.TotalCount.ToString("N0", culture)</strong>
+            </div>
+        </div>
+
+        @if (Model.Items == null || !Model.Items.Any())
+        {
+            <div class="cargo-empty">
+                <div class="cargo-empty-icon"><span class="material-symbols-outlined" aria-hidden="true">inventory_2</span></div>
+                <h3>Kargo bulunamadı</h3>
+                <p>Arama kriterlerinizi değiştirin veya filtreleri temizleyin.</p>
+                <a asp-controller="AdminCargos" asp-action="Index" class="cargo-reset">Filtreleri Temizle</a>
+            </div>
+        }
+        else
+        {
+            <div class="cargo-table-scroll">
+                <table class="cargo-table">
+                    <thead>
+                        <tr>
+                            <th>Takip Numarası</th>
+                            <th>Durum</th>
+                            <th>Çıkış Şubesi</th>
+                            <th>Varış Şubesi</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var cargo in Model.Items)
+                        {
+                            var completed = cargo.Status == CargoStatus.Delivered ||
+                                            cargo.Status == CargoStatus.ReturnedToSender;
+
+                            var statusText = cargo.Status switch
+                            {
+                                CargoStatus.Created => "Oluşturuldu",
+                                CargoStatus.AtOriginBranch => "Çıkış Şubesinde",
+                                CargoStatus.AtTransferCenter => "Transfer Merkezinde",
+                                CargoStatus.AtDestinationBranch => "Varış Şubesinde",
+                                CargoStatus.OutForDelivery => "Dağıtıma Çıktı",
+                                CargoStatus.Delivered => "Teslim Edildi",
+                                CargoStatus.DeliveryFailed => "Teslim Edilemedi",
+                                CargoStatus.ReturnInProgress => "İade Sürecinde",
+                                CargoStatus.ReturnedToSender => "İade Edildi",
+                                _ => cargo.Status.ToString()
+                            };
+
+                            var statusClass = cargo.Status switch
+                            {
+                                CargoStatus.Delivered => "success",
+                                CargoStatus.ReturnedToSender => "returned",
+                                CargoStatus.DeliveryFailed => "danger",
+                                CargoStatus.ReturnInProgress => "warning",
+                                _ => ""
+                            };
+
+                            <tr>
+                                <td>
+                                    <div class="cargo-tracking-cell">
+                                        <span class="cargo-item-icon">
+                                            <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+                                        </span>
+                                        <a asp-controller="AdminCargos" asp-action="Details"
+                                           asp-route-id="@cargo.Id" class="cargo-tracking-number">@cargo.TrackingNumber</a>
+                                    </div>
+                                </td>
+                                <td><span class="cargo-status @statusClass">@statusText</span></td>
+                                <td><span class="cargo-branch">@cargo.OriginBranchName</span></td>
+                                <td><span class="cargo-branch">@cargo.DestinationBranchName</span></td>
+                                <td>
+                                    <div class="cargo-table-actions">
+                                        <a asp-controller="AdminCargos" asp-action="Details"
+                                           asp-route-id="@cargo.Id" class="cargo-action">
+                                            <span class="material-symbols-outlined" aria-hidden="true">visibility</span> Detay
+                                        </a>
+                                        @if (!completed)
+                                        {
+                                            <a asp-controller="AdminCargos" asp-action="Status"
+                                               asp-route-id="@cargo.Id" class="cargo-action">
+                                                <span class="material-symbols-outlined" aria-hidden="true">sync</span> Durum
+                                            </a>
+                                        }
+                                        @if (cargo.Status == CargoStatus.Created)
+                                        {
+                                            <a asp-controller="AdminCargos" asp-action="Edit"
+                                               asp-route-id="@cargo.Id" class="cargo-action edit">
+                                                <span class="material-symbols-outlined" aria-hidden="true">edit</span> Düzenle
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <div class="cargo-footer">
+            <span class="cargo-page-info">Bu sayfada @shownCount kayıt gösteriliyor · Toplam @Model.TotalCount kayıt</span>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="cargo-pagination" aria-label="Kargo listesi sayfaları">
+                    @if (Model.Page > 1)
+                    {
+                        <a asp-action="Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status"
+                           asp-route-branchId="@Model.BranchId" asp-route-page="@(Model.Page - 1)"
+                           class="cargo-page-link">Önceki</a>
+                    }
+
+                    @for (var pageNumber = firstPage; pageNumber <= lastPage; pageNumber++)
+                    {
+                        <a asp-action="Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status"
+                           asp-route-branchId="@Model.BranchId" asp-route-page="@pageNumber"
+                           class="cargo-page-link @(pageNumber == Model.Page ? "active" : "")"
+                           aria-current="@(pageNumber == Model.Page ? "page" : null)">@pageNumber</a>
+                    }
+
+                    @if (Model.Page < Model.TotalPages)
+                    {
+                        <a asp-action="Index" asp-route-search="@Model.Search" asp-route-status="@Model.Status"
+                           asp-route-branchId="@Model.BranchId" asp-route-page="@(Model.Page + 1)"
+                           class="cargo-page-link">Sonraki</a>
+                    }
+                </nav>
+            }
+        </div>
+    </div>
+</section>
+

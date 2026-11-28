@@ -1,81 +1,773 @@
 ﻿@model CargoTrack.WebUI.Models.AdminUsersVm
 
 @{
-    ViewData["Title"] = "Kullanıcı Yönetimi";
+    Layout = "_PanelLayout";
+    ViewData["Title"] = "Müdür Atamaları";
+
+    var users = Model.Users.ToList();
+    var branches = Model.Branches.ToList();
+
+    var managerCount = users.Count(x => x.Role == "Manager");
+    var userCount = users.Count(x => x.Role == "User");
+    var adminCount = users.Count(x => x.Role == "Admin");
 }
 
-<h2>Kullanıcı Yönetimi</h2>
+<style>
+    .au-page {
+        width: 100%;
+        color: #0b1c30;
+        padding-bottom: 40px;
+    }
 
-@if (TempData["Success"] != null)
-{
-    <p style="color:green">@TempData["Success"]</p>
-}
+    .au-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 26px;
+    }
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>E-posta</th>
-            <th>Mevcut Rol</th>
-            <th>Yeni Rol</th>
-            <th>Şube</th>
-            <th>İşlem</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var user in Model.Users)
-        {
-            <tr>
-                <td>@user.Email</td>
-                <td>@user.Role</td>
+    .au-eyebrow {
+        color: #f58a00;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        margin-bottom: 9px;
+    }
 
-                @if (user.Role == "Admin")
-                {
-                    <td colspan="3">
-                        Admin hesabı korunuyor.
-                    </td>
-                }
-                else
-                {
-                    <td colspan="3">
-                        <form asp-action="Assign" method="post">
-                            @Html.AntiForgeryToken()
+    .au-title {
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: -.7px;
+        margin: 0;
+        color: #0b1c30;
+    }
 
-                            <input type="hidden"
-                                   name="userId"
-                                   value="@user.Id" />
+    .au-subtitle {
+        margin: 9px 0 0;
+        color: #8293ac;
+        font-size: 13px;
+    }
 
-                            <select name="role">
-                                <option value="User"
-                                        selected="@(user.Role == "User")">
-                                    User
-                                </option>
-                                <option value="Manager"
-                                        selected="@(user.Role == "Manager")">
-                                    Manager
-                                </option>
-                            </select>
+    .au-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #dce5f0;
+        background: white;
+        padding: 12px 16px;
+        border-radius: 10px;
+        color: #244464;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 800;
+    }
 
-                            <select name="branchId">
-                                <option value="">
-                                    Şube seçiniz
-                                </option>
-
-                                @foreach (var branch in Model.Branches)
-                                {
-                                    <option value="@branch.Id"
-                                            selected="@(user.BranchId == branch.Id)">
-                                        @branch.BranchName
-                                    </option>
-                                }
-                            </select>
-
-                            <button type="submit">
-                                Kaydet
-                            </button>
-                        </form>
-                    </td>
-                }
-            </tr>
+        .au-back:hover {
+            color: #fd8b00;
+            border-color: #fd8b00;
         }
-    </tbody>
-</table>
+
+    .au-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 15px;
+        margin-bottom: 22px;
+    }
+
+    .au-stat {
+        padding: 22px;
+        border: 1px solid #e0e8f3;
+        border-radius: 15px;
+        background: white;
+    }
+
+    .au-stat-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .au-stat-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #7d91ac;
+    }
+
+    .au-stat-icon {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: #fff2e2;
+        color: #f58a00;
+    }
+
+    .au-stat-value {
+        margin-top: 14px;
+        font-size: 29px;
+        font-weight: 800;
+        color: #102842;
+        line-height: 1;
+    }
+
+    .au-card {
+        background: white;
+        border: 1px solid #e1e8f2;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 28px rgba(14, 39, 68, .025);
+    }
+
+    .au-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 22px 24px;
+        flex-wrap: wrap;
+        border-bottom: 1px solid #edf1f6;
+    }
+
+    .au-card-title {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 800;
+        color: #102842;
+    }
+
+    .au-card-desc {
+        margin: 6px 0 0;
+        color: #8a9ab0;
+        font-size: 12px;
+    }
+
+    .au-search {
+        width: 275px;
+        max-width: 100%;
+        height: 43px;
+        border: 1px solid #dde6f1;
+        background: #f8fafe;
+        border-radius: 10px;
+        padding: 10px 13px;
+        font-size: 12px;
+        color: #163653;
+        outline: none;
+    }
+
+        .au-search:focus {
+            border-color: #fd8b00;
+            box-shadow: 0 0 0 3px rgba(253, 139, 0, .1);
+        }
+
+    .au-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .au-table {
+        width: 100%;
+        min-width: 860px;
+        border-collapse: collapse;
+    }
+
+        .au-table th {
+            background: #f6f8fc;
+            color: #8397b3;
+            font-size: 10px;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            font-weight: 800;
+            text-align: left;
+            padding: 15px 22px;
+            border-bottom: 1px solid #e6edf5;
+        }
+
+        .au-table td {
+            padding: 18px 22px;
+            border-bottom: 1px solid #edf1f6;
+            vertical-align: middle;
+        }
+
+        .au-table tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .au-table tbody tr:hover {
+            background: #fcfdff;
+        }
+
+    .au-person {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 190px;
+    }
+
+    .au-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eaf1fa;
+        color: #285987;
+        font-size: 14px;
+        font-weight: 800;
+        flex-shrink: 0;
+    }
+
+    .au-email {
+        color: #183856;
+        font-size: 12px;
+        font-weight: 800;
+        overflow-wrap: anywhere;
+    }
+
+    .au-role {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 11px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+        .au-role.admin {
+            color: #a95b05;
+            background: #fff0dc;
+        }
+
+        .au-role.manager {
+            color: #2564a2;
+            background: #e9f3ff;
+        }
+
+        .au-role.user {
+            color: #56816a;
+            background: #e9f8ef;
+        }
+
+    .au-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .au-form {
+        display: grid;
+        grid-template-columns: minmax(110px, 1fr) minmax(160px, 1.3fr) auto;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .au-select {
+        height: 42px;
+        width: 100%;
+        min-width: 0;
+        border: 1px solid #dfe7f1;
+        background: #fff;
+        color: #183858;
+        border-radius: 9px;
+        padding: 0 10px;
+        font-size: 12px;
+        outline: none;
+    }
+
+        .au-select:focus {
+            border-color: #fd8b00;
+        }
+
+        .au-select:disabled {
+            color: #9aabc0;
+            background: #f2f5f9;
+        }
+
+    .au-save {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        gap: 7px;
+        height: 42px;
+        padding: 0 16px;
+        border: 0;
+        border-radius: 9px;
+        color: #0b1c30;
+        background: #fd8b00;
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+        .au-save:hover {
+            background: #eda000;
+        }
+
+    .au-protected {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 12px 14px;
+        border-radius: 9px;
+        background: #f3f6fb;
+        color: #8294ab;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .au-footer {
+        padding: 17px 24px;
+        color: #8197b3;
+        font-size: 11px;
+        border-top: 1px solid #edf1f6;
+    }
+
+    .au-notice {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 15px 18px;
+        border-radius: 12px;
+        font-size: 12px;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+
+        .au-notice.success {
+            background: #e8f8ef;
+            color: #18764c;
+        }
+
+        .au-notice.error {
+            background: #fff0ec;
+            color: #bc5546;
+        }
+
+    .au-info {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 19px 22px;
+        border: 1px solid #dfe8f4;
+        border-radius: 13px;
+        background: #f0f5fc;
+        margin-top: 20px;
+        color: #607994;
+        font-size: 12px;
+        line-height: 1.8;
+    }
+
+        .au-info strong {
+            color: #173857;
+        }
+
+    .au-empty {
+        padding: 35px 20px;
+        text-align: center;
+        color: #8498b1;
+        font-size: 13px;
+    }
+
+    @@media (max-width: 1100px) {
+        .au-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .au-stats {
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .au-stat {
+            padding: 16px;
+        }
+
+        .au-stat-value {
+            font-size: 24px;
+        }
+
+        .au-title {
+            font-size: 25px;
+        }
+
+        .au-card-head {
+            padding: 18px;
+        }
+
+        .au-form {
+            grid-template-columns: 1fr;
+        }
+
+        .au-table {
+            min-width: 740px;
+        }
+    }
+</style>
+
+<div class="au-page">
+
+    <div class="au-heading">
+        <div>
+            <div class="au-eyebrow">
+                CARGOTRACK / SİSTEM YÖNETİMİ
+            </div>
+
+            <h1 class="au-title">
+                Müdür ve Kullanıcı Yönetimi
+            </h1>
+
+            <p class="au-subtitle">
+                Kullanıcı rollerini yönetin ve şube müdürlerini ilgili şubelere atayın.
+            </p>
+        </div>
+
+        <a asp-controller="AdminBranches"
+           asp-action="Index"
+           class="au-back">
+            Şube Yönetimine Git
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="au-notice success" role="status">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="au-notice error" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span>@TempData["Error"]</span>
+        </div>
+    }
+
+    <div class="au-stats">
+
+        <div class="au-stat">
+            <div class="au-stat-top">
+                <span class="au-stat-label">Toplam Kullanıcı</span>
+                <div class="au-stat-icon">
+                    <span class="material-symbols-outlined">groups</span>
+                </div>
+            </div>
+            <div class="au-stat-value">@users.Count</div>
+        </div>
+
+        <div class="au-stat">
+            <div class="au-stat-top">
+                <span class="au-stat-label">Şube Müdürü</span>
+                <div class="au-stat-icon">
+                    <span class="material-symbols-outlined">badge</span>
+                </div>
+            </div>
+            <div class="au-stat-value">@managerCount</div>
+        </div>
+
+        <div class="au-stat">
+            <div class="au-stat-top">
+                <span class="au-stat-label">Normal Kullanıcı</span>
+                <div class="au-stat-icon">
+                    <span class="material-symbols-outlined">person</span>
+                </div>
+            </div>
+            <div class="au-stat-value">@userCount</div>
+        </div>
+
+        <div class="au-stat">
+            <div class="au-stat-top">
+                <span class="au-stat-label">Yönetici Hesabı</span>
+                <div class="au-stat-icon">
+                    <span class="material-symbols-outlined">admin_panel_settings</span>
+                </div>
+            </div>
+            <div class="au-stat-value">@adminCount</div>
+        </div>
+
+    </div>
+
+    <div class="au-card">
+
+        <div class="au-card-head">
+            <div>
+                <h2 class="au-card-title">Kayıtlı Kullanıcılar</h2>
+                <p class="au-card-desc">
+                    Kullanıcıların rollerini ve şube bağlantılarını düzenleyin.
+                </p>
+            </div>
+
+            <input type="search"
+                   id="auSearch"
+                   class="au-search"
+                   placeholder="E-posta ile kullanıcı ara..."
+                   aria-label="E-posta ile kullanıcı ara" />
+        </div>
+
+        <div class="au-table-wrap">
+
+            <table class="au-table">
+                <thead>
+                    <tr>
+                        <th>Kullanıcı</th>
+                        <th>Mevcut Rol</th>
+                        <th colspan="3">Rol ve Şube Atama</th>
+                    </tr>
+                </thead>
+
+                <tbody id="auUserRows">
+
+                    @foreach (var user in users)
+                    {
+                        var currentRole = user.Role ?? "User";
+                        var roleClass = currentRole == "Admin"
+                            ? "admin"
+                            : currentRole == "Manager"
+                                ? "manager"
+                                : "user";
+
+                        var roleName = currentRole == "Admin"
+                            ? "Yönetici"
+                            : currentRole == "Manager"
+                                ? "Şube Müdürü"
+                                : "Kullanıcı";
+
+                        var email = user.Email ?? "E-posta bulunamadı";
+                        var firstLetter = email.Length > 0
+                            ? email.Substring(0, 1).ToUpperInvariant()
+                            : "?";
+
+                        <tr class="au-user-row" data-email="@email.ToLowerInvariant()">
+
+                            <td>
+                                <div class="au-person">
+                                    <div class="au-avatar">
+                                        @firstLetter
+                                    </div>
+
+                                    <span class="au-email">
+                                        @email
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="au-role @roleClass">
+                                    <span class="au-dot"></span>
+                                    @roleName
+                                </span>
+                            </td>
+
+                            @if (currentRole == "Admin")
+                            {
+                                <td colspan="3">
+                                    <div class="au-protected">
+                                        <span class="material-symbols-outlined">
+                                            lock
+                                        </span>
+                                        Admin hesabı korunuyor. Rolü değiştirilemez.
+                                    </div>
+                                </td>
+                            }
+                            else
+                            {
+                                <td colspan="3">
+
+                                    <form asp-controller="AdminUsers"
+                                          asp-action="Assign"
+                                          method="post"
+                                          class="au-form">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="userId"
+                                               value="@user.Id" />
+
+                                        <div>
+                                            <label class="visually-hidden">
+                                                Yeni Rol
+                                            </label>
+
+                                            <select name="role"
+                                                    class="au-select au-role-select"
+                                                    aria-label="Yeni kullanıcı rolü">
+
+                                                <option value="User"
+                                                        selected="@(currentRole == "User")">
+                                                    Kullanıcı
+                                                </option>
+
+                                                <option value="Manager"
+                                                        selected="@(currentRole == "Manager")">
+                                                    Şube Müdürü
+                                                </option>
+
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label class="visually-hidden">
+                                                Şube
+                                            </label>
+
+                                            <select name="branchId"
+                                                    class="au-select au-branch-select"
+                                                    aria-label="Atanacak şube">
+
+                                                <option value="">
+                                                    Şube seçiniz
+                                                </option>
+
+                                                @foreach (var branch in branches)
+                                                {
+                                                    <option value="@branch.Id"
+                                                            selected="@(user.BranchId == branch.Id)">
+                                                        @branch.BranchName
+                                                    </option>
+                                                }
+
+                                            </select>
+                                        </div>
+
+                                        <button type="submit"
+                                                class="au-save">
+                                            <span class="material-symbols-outlined"
+                                                  style="font-size:17px">
+                                                save
+                                            </span>
+                                            Kaydet
+                                        </button>
+
+                                    </form>
+
+                                </td>
+                            }
+
+                        </tr>
+                    }
+
+                </tbody>
+            </table>
+
+            @if (!users.Any())
+            {
+                <div class="au-empty">
+                    Henüz kayıtlı kullanıcı bulunmuyor.
+                </div>
+            }
+            else
+            {
+                <div id="auNoSearchResult"
+                     class="au-empty"
+                     style="display:none">
+                    Aradığınız e-posta adresiyle eşleşen kullanıcı bulunamadı.
+                </div>
+            }
+
+        </div>
+
+        <div class="au-footer">
+            Sistemde @users.Count kullanıcı kayıtlıdır.
+            Rol değişiklikleri Kaydet butonuna basıldığında uygulanır.
+        </div>
+
+    </div>
+
+    <div class="au-info">
+        <span class="material-symbols-outlined">
+            info
+        </span>
+
+        <div>
+            <strong>Rol ve şube atama hakkında</strong>
+
+            <div>
+                Şube müdürü atamak için kullanıcı rolünü
+                <strong>Şube Müdürü</strong> olarak seçin ve
+                yöneteceği şubeyi belirleyin.
+
+                Normal kullanıcı rolünde şube ataması yapılmaz.
+
+                Admin hesabının rolü bu ekrandan değiştirilemez.
+                Yeni kullanıcı hesapları mevcut kayıt sistemi üzerinden
+                oluşturulur.
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+        const forms = document.querySelectorAll(".au-form");
+
+        forms.forEach(function(form) {
+
+            const roleSelect = form.querySelector(".au-role-select");
+            const branchSelect = form.querySelector(".au-branch-select");
+
+            function updateBranchState() {
+
+                const isManager = roleSelect.value === "Manager";
+
+                branchSelect.disabled = !isManager;
+                branchSelect.required = isManager;
+
+                if (!isManager) {
+                    branchSelect.value = "";
+                }
+            }
+
+            roleSelect.addEventListener("change", updateBranchState);
+
+            updateBranchState();
+        });
+
+        const searchInput = document.getElementById("auSearch");
+        const rows = document.querySelectorAll(".au-user-row");
+        const noResult = document.getElementById("auNoSearchResult");
+
+        if (searchInput) {
+            searchInput.addEventListener("input", function() {
+
+                const term = this.value
+                    .trim()
+                    .toLocaleLowerCase("tr-TR");
+
+                let visibleCount = 0;
+
+                rows.forEach(function(row) {
+
+                    const email = row.dataset.email || "";
+                    const visible = email.toLocaleLowerCase("tr-TR")
+                        .includes(term);
+
+                    row.style.display = visible ? "" : "none";
+
+                    if (visible) {
+                        visibleCount++;
+                    }
+                });
+
+                if (noResult) {
+                    noResult.style.display =
+                        visibleCount === 0 ? "block" : "none";
+                }
+            });
+        }
+    });
+</script>

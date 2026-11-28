@@ -2,62 +2,937 @@
 
 @{
     Layout = null;
+    ViewData["Title"] = "Hesap Oluştur";
 }
 
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="utf-8" />
-    <title>CargoTrack - Kayıt Ol</title>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1" />
+
+    <title>Hesap Oluştur | CargoTrack</title>
+
+    <link rel="preconnect"
+          href="https://fonts.googleapis.com" />
+
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin />
+
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet" />
+
+    <style>
+            :root {
+                --navy: #0b1c30;
+                --navy-light: #142b47;
+                --orange: #fd8b00;
+                --text: #13243b;
+                --muted: #718096;
+                --border: #e2e8f0;
+                --background: #f8f9ff;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                min-height: 100vh;
+                font-family: 'Hanken Grotesk', Arial, sans-serif;
+                background: var(--background);
+                color: var(--text);
+            }
+
+            a {
+                text-decoration: none;
+            }
+
+            button,
+            input {
+                font: inherit;
+            }
+
+            .auth-layout {
+                min-height: 100vh;
+                display: grid;
+                grid-template-columns: 1.04fr 1fr;
+            }
+
+            /* SOL TANITIM PANELİ */
+
+            .auth-showcase {
+                position: relative;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                padding: 48px 9%;
+                color: white;
+                background: radial-gradient( circle at 85% 68%, rgba(253,139,0,.13), transparent 38% ), linear-gradient( 145deg, #0b1c30, #152d4a );
+            }
+
+                .auth-showcase::before {
+                    content: "";
+                    position: absolute;
+                    width: 470px;
+                    height: 470px;
+                    border: 1px solid rgba(255,255,255,.08);
+                    border-radius: 50%;
+                    right: -220px;
+                    top: 17%;
+                    pointer-events: none;
+                }
+
+                .auth-showcase::after {
+                    content: "";
+                    position: absolute;
+                    width: 650px;
+                    height: 650px;
+                    border: 1px solid rgba(255,255,255,.06);
+                    border-radius: 50%;
+                    right: -300px;
+                    top: 0;
+                    pointer-events: none;
+                }
+
+            .brand {
+                position: relative;
+                z-index: 1;
+                display: inline-flex;
+                align-items: center;
+                gap: 12px;
+                color: white;
+                width: fit-content;
+            }
+
+            .brand-icon {
+                width: 43px;
+                height: 43px;
+                display: grid;
+                place-items: center;
+                background: var(--orange);
+                color: var(--navy);
+                border-radius: 12px;
+                flex-shrink: 0;
+            }
+
+            .brand-name {
+                font-size: 25px;
+                font-weight: 800;
+                letter-spacing: -.8px;
+            }
+
+            .showcase-content {
+                position: relative;
+                z-index: 1;
+                max-width: 520px;
+                margin: auto 0;
+                padding: 42px 0;
+            }
+
+            .eyebrow {
+                display: inline-flex;
+                align-items: center;
+                gap: 9px;
+                padding: 9px 13px;
+                border: 1px solid rgba(253,139,0,.35);
+                color: #ffc47b;
+                background: rgba(253,139,0,.09);
+                border-radius: 30px;
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: .5px;
+                margin-bottom: 26px;
+            }
+
+            .eyebrow-dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: var(--orange);
+            }
+
+            .showcase-content h1 {
+                font-size: clamp(34px, 3.7vw, 57px);
+                line-height: 1.12;
+                letter-spacing: -1.9px;
+                font-weight: 800;
+                margin: 0 0 22px;
+            }
+
+                .showcase-content h1 span {
+                    color: var(--orange);
+                }
+
+            .showcase-description {
+                color: #b9c9dc;
+                max-width: 400px;
+                line-height: 1.8;
+                font-size: 16px;
+                margin: 0 0 34px;
+            }
+
+            /* DEKORATİF GÖNDERİ KARTI */
+
+            .shipment-card {
+                max-width: 430px;
+                background: rgba(255,255,255,.08);
+                border: 1px solid rgba(255,255,255,.13);
+                border-radius: 18px;
+                padding: 24px;
+                box-shadow: 0 22px 45px rgba(0,0,0,.12);
+            }
+
+            .shipment-card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                padding-bottom: 20px;
+                border-bottom: 1px solid rgba(255,255,255,.12);
+            }
+
+                .shipment-card-header small {
+                    display: block;
+                    color: #9fb4cc;
+                    font-size: 12px;
+                    margin-bottom: 6px;
+                }
+
+                .shipment-card-header strong {
+                    font-size: 17px;
+                }
+
+            .shipment-icon {
+                display: grid;
+                place-items: center;
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
+                background: rgba(253,139,0,.14);
+                color: var(--orange);
+            }
+
+            .shipment-route {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                margin-top: 24px;
+            }
+
+            .route-city {
+                font-size: 16px;
+                font-weight: 700;
+            }
+
+                .route-city small {
+                    display: block;
+                    margin-top: 5px;
+                    font-weight: 400;
+                    color: #a6bad1;
+                    font-size: 12px;
+                }
+
+            .route-line {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                color: var(--orange);
+            }
+
+                .route-line::before,
+                .route-line::after {
+                    content: "";
+                    height: 1px;
+                    flex: 1;
+                    background: rgba(255,255,255,.26);
+                }
+
+            .showcase-footer {
+                position: relative;
+                z-index: 1;
+                color: #91a7c0;
+                font-size: 12px;
+            }
+
+            /* SAĞ KAYIT PANELİ */
+
+            .auth-main {
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 75px 38px 45px;
+                background: var(--background);
+            }
+
+            .auth-top-link {
+                position: absolute;
+                top: 45px;
+                right: 55px;
+                color: #52647c;
+                font-size: 13px;
+                font-weight: 700;
+            }
+
+                .auth-top-link:hover {
+                    color: var(--orange);
+                }
+
+            .register-container {
+                width: 100%;
+                max-width: 490px;
+            }
+
+            .mobile-brand {
+                display: none;
+            }
+
+            .register-heading {
+                margin-bottom: 28px;
+            }
+
+                .register-heading h2 {
+                    font-size: clamp(29px, 3vw, 37px);
+                    letter-spacing: -1.3px;
+                    font-weight: 800;
+                    margin: 0 0 10px;
+                }
+
+                .register-heading p {
+                    margin: 0;
+                    font-size: 14px;
+                    color: var(--muted);
+                    line-height: 1.7;
+                }
+
+            .form-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0 16px;
+            }
+
+            .form-group {
+                margin-bottom: 17px;
+                min-width: 0;
+            }
+
+                .form-group.full {
+                    grid-column: 1 / -1;
+                }
+
+            .form-label {
+                display: block;
+                font-size: 13px;
+                font-weight: 700;
+                margin-bottom: 8px;
+            }
+
+            .input-wrap {
+                position: relative;
+            }
+
+            .form-input {
+                width: 100%;
+                height: 50px;
+                padding: 0 15px;
+                border: 1px solid var(--border);
+                border-radius: 11px;
+                background: #fff;
+                color: var(--text);
+                font-size: 14px;
+                outline: none;
+                transition: border-color .2s, box-shadow .2s;
+            }
+
+                .form-input::placeholder {
+                    color: #a0aec0;
+                }
+
+                .form-input:focus {
+                    border-color: var(--orange);
+                    box-shadow: 0 0 0 4px rgba(253,139,0,.11);
+                }
+
+                .form-input.input-validation-error {
+                    border-color: #dc3545;
+                }
+
+            .password-input {
+                padding-right: 70px;
+            }
+
+            .password-toggle {
+                position: absolute;
+                right: 8px;
+                top: 50%;
+                transform: translateY(-50%);
+                padding: 8px 5px;
+                background: transparent;
+                color: #61738b;
+                border: none;
+                cursor: pointer;
+                font-size: 12px;
+                font-weight: 700;
+            }
+
+                .password-toggle:hover {
+                    color: var(--orange);
+                }
+
+            .password-note {
+                margin: 0 0 19px;
+                display: flex;
+                gap: 8px;
+                align-items: flex-start;
+                color: #73839a;
+                font-size: 12px;
+                line-height: 1.6;
+            }
+
+                .password-note svg {
+                    flex-shrink: 0;
+                    margin-top: 2px;
+                }
+
+            .register-button {
+                width: 100%;
+                height: 53px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 12px;
+                background: var(--orange);
+                border: none;
+                border-radius: 11px;
+                color: #172338;
+                font-size: 15px;
+                font-weight: 800;
+                cursor: pointer;
+                transition: transform .2s, background .2s;
+            }
+
+                .register-button:hover {
+                    background: #ffa329;
+                    transform: translateY(-1px);
+                }
+
+                .register-button:active {
+                    transform: translateY(0);
+                }
+
+            .login-text {
+                text-align: center;
+                color: #718096;
+                margin-top: 24px;
+                font-size: 14px;
+            }
+
+                .login-text a {
+                    color: #df7900;
+                    font-weight: 800;
+                }
+
+                    .login-text a:hover {
+                        text-decoration: underline;
+                    }
+
+            .validation-summary-errors {
+                background: #fff1f1;
+                color: #a52b2b;
+                border: 1px solid #ffd7d7;
+                padding: 13px 15px;
+                border-radius: 10px;
+                font-size: 13px;
+                margin-bottom: 20px;
+            }
+
+                .validation-summary-errors ul {
+                    margin: 0;
+                    padding-left: 18px;
+                }
+
+            .validation-summary-valid {
+                display: none;
+            }
+
+            .field-validation-error {
+                display: block;
+                margin-top: 6px;
+                color: #c0392b;
+                font-size: 12px;
+            }
+
+            .security-note {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                margin-top: 23px;
+                font-size: 12px;
+                color: #93a1b3;
+            }
+
+            /* TABLET VE MOBİL */
+
+            @@media (max-width: 950px) {
+                .auth-layout {
+                    grid-template-columns: 1fr;
+                }
+
+                .auth-showcase {
+                    display: none;
+                }
+
+                .auth-main {
+                    min-height: 100vh;
+                    padding: 90px 24px 45px;
+                }
+
+                .auth-top-link {
+                    right: 24px;
+                    top: 28px;
+                }
+
+                .mobile-brand {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-bottom: 32px;
+                    color: var(--navy);
+                    font-weight: 800;
+                    font-size: 23px;
+                }
+
+                    .mobile-brand .brand-icon {
+                        width: 38px;
+                        height: 38px;
+                    }
+            }
+
+            @@media (max-width: 520px) {
+                .auth-main {
+                    padding-left: 20px;
+                    padding-right: 20px;
+                }
+
+                .form-grid {
+                    grid-template-columns: 1fr;
+                    gap: 0;
+                }
+
+                .register-heading h2 {
+                    font-size: 30px;
+                }
+
+                .form-input,
+                .register-button {
+                    height: 52px;
+                }
+            }
+    </style>
 </head>
+
 <body>
-    <h2>CargoTrack - Kayıt Ol</h2>
 
-    <form asp-controller="Account"
-          asp-action="Register"
-          method="post">
+    <div class="auth-layout">
 
-        @Html.AntiForgeryToken()
+        <!-- SOL TANITIM PANELİ -->
+        <aside class="auth-showcase">
 
-        <div asp-validation-summary="All"
-             style="color:red"></div>
+            <a asp-controller="Tracking"
+               asp-action="Index"
+               class="brand">
 
-        <div>
-            <label>Ad</label>
-            <input asp-for="FirstName" />
-        </div>
+                <span class="brand-icon">
+                    <svg width="25" height="25"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.9"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+                        <path d="M3 7 12 3l9 4v10l-9 4-9-4V7Z" />
+                        <path d="m3 7 9 5 9-5M12 12v9M7.5 5l9 5" />
+                    </svg>
+                </span>
 
-        <div>
-            <label>Soyad</label>
-            <input asp-for="LastName" />
-        </div>
+                <span class="brand-name">
+                    CargoTrack
+                </span>
 
-        <div>
-            <label>Telefon</label>
-            <input asp-for="PhoneNumber" />
-        </div>
+            </a>
 
-        <div>
-            <label>E-posta</label>
-            <input asp-for="Email" />
-        </div>
+            <div class="showcase-content">
 
-        <div>
-            <label>Şifre</label>
-            <input asp-for="Password" type="password" />
-        </div>
+                <div class="eyebrow">
+                    <span class="eyebrow-dot"></span>
+                    AKILLI KARGO YÖNETİMİ
+                </div>
 
-        <div>
-            <label>Şifre Tekrar</label>
-            <input asp-for="ConfirmPassword"
-                   type="password" />
-        </div>
+                <h1>
+                    Her gönderi
+                    <span>kontrol altında.</span>
+                </h1>
 
-        <button type="submit">Kayıt Ol</button>
-    </form>
+                <p class="showcase-description">
+                    Kargolarınızı tek bir platformdan yönetin,
+                    operasyonları takip edin ve gönderilerinizin
+                    tüm yolculuğunu kolayca görüntüleyin.
+                </p>
 
-    <a asp-controller="Account" asp-action="Login">
-        Giriş Yap
-    </a>
+                <!-- DEKORATİF GÖNDERİ KARTI -->
+                <div class="shipment-card">
+
+                    <div class="shipment-card-header">
+
+                        <div>
+                            <small>GÖNDERİ YOLCULUĞU</small>
+                            <strong>Uçtan uca takip</strong>
+                        </div>
+
+                        <div class="shipment-icon">
+                            <svg width="24" height="24"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round"
+                                 aria-hidden="true">
+                                <path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z" />
+                                <circle cx="7" cy="18" r="2" />
+                                <circle cx="18" cy="18" r="2" />
+                            </svg>
+                        </div>
+
+                    </div>
+
+                    <div class="shipment-route">
+
+                        <div class="route-city">
+                            İstanbul
+                            <small>Çıkış noktası</small>
+                        </div>
+
+                        <div class="route-line">
+                            <span aria-hidden="true">➜</span>
+                        </div>
+
+                        <div class="route-city">
+                            Ankara
+                            <small>Varış noktası</small>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="showcase-footer">
+                © @DateTime.Now.Year CargoTrack · Kargo Yönetim Sistemi
+            </div>
+
+        </aside>
+
+        <!-- SAĞ KAYIT PANELİ -->
+        <main class="auth-main">
+
+            <a asp-controller="Account"
+               asp-action="Login"
+               class="auth-top-link">
+                ← Giriş Yap
+            </a>
+
+            <div class="register-container">
+
+                <!-- MOBİL LOGO -->
+                <div class="mobile-brand">
+                    <span class="brand-icon">
+                        <svg width="22" height="22"
+                             viewBox="0 0 24 24"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="2"
+                             stroke-linejoin="round"
+                             aria-hidden="true">
+                            <path d="M3 7 12 3l9 4v10l-9 4-9-4V7Z" />
+                            <path d="m3 7 9 5 9-5M12 12v9" />
+                        </svg>
+                    </span>
+
+                    CargoTrack
+                </div>
+
+                <!-- BAŞLIK -->
+                <div class="register-heading">
+                    <h2>Hesabını oluştur.</h2>
+                    <p>
+                        CargoTrack'e katılın ve gönderilerinizi
+                        kolayca takip etmeye başlayın.
+                    </p>
+                </div>
+
+                <!-- KAYIT FORMU -->
+                <form asp-controller="Account"
+                      asp-action="Register"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="All"
+                         role="alert"></div>
+
+                    <div class="form-grid">
+
+                        <!-- AD -->
+                        <div class="form-group">
+
+                            <label asp-for="FirstName"
+                                   class="form-label">
+                                Ad
+                            </label>
+
+                            <input asp-for="FirstName"
+                                   class="form-input"
+                                   placeholder="Adınız"
+                                   autocomplete="given-name" />
+
+                            <span asp-validation-for="FirstName"></span>
+
+                        </div>
+
+                        <!-- SOYAD -->
+                        <div class="form-group">
+
+                            <label asp-for="LastName"
+                                   class="form-label">
+                                Soyad
+                            </label>
+
+                            <input asp-for="LastName"
+                                   class="form-input"
+                                   placeholder="Soyadınız"
+                                   autocomplete="family-name" />
+
+                            <span asp-validation-for="LastName"></span>
+
+                        </div>
+
+                        <!-- TELEFON -->
+                        <div class="form-group full">
+
+                            <label asp-for="PhoneNumber"
+                                   class="form-label">
+                                Telefon Numarası
+                            </label>
+
+                            <input asp-for="PhoneNumber"
+                                   type="tel"
+                                   class="form-input"
+                                   placeholder="05XX XXX XX XX"
+                                   autocomplete="tel" />
+
+                            <span asp-validation-for="PhoneNumber"></span>
+
+                        </div>
+
+                        <!-- E-POSTA -->
+                        <div class="form-group full">
+
+                            <label asp-for="Email"
+                                   class="form-label">
+                                E-posta Adresi
+                            </label>
+
+                            <input asp-for="Email"
+                                   type="email"
+                                   class="form-input"
+                                   placeholder="ornek@eposta.com"
+                                   autocomplete="email" />
+
+                            <span asp-validation-for="Email"></span>
+
+                        </div>
+
+                        <!-- ŞİFRE -->
+                        <div class="form-group full">
+
+                            <label asp-for="Password"
+                                   class="form-label">
+                                Şifre
+                            </label>
+
+                            <div class="input-wrap">
+
+                                <input asp-for="Password"
+                                       id="Password"
+                                       type="password"
+                                       class="form-input password-input"
+                                       placeholder="Şifrenizi oluşturun"
+                                       autocomplete="new-password" />
+
+                                <button type="button"
+                                        class="password-toggle"
+                                        data-target="Password"
+                                        aria-label="Şifreyi göster"
+                                        aria-pressed="false">
+                                    Göster
+                                </button>
+
+                            </div>
+
+                            <span asp-validation-for="Password"></span>
+
+                        </div>
+
+                        <!-- ŞİFRE TEKRAR -->
+                        <div class="form-group full">
+
+                            <label asp-for="ConfirmPassword"
+                                   class="form-label">
+                                Şifre Tekrar
+                            </label>
+
+                            <div class="input-wrap">
+
+                                <input asp-for="ConfirmPassword"
+                                       id="ConfirmPassword"
+                                       type="password"
+                                       class="form-input password-input"
+                                       placeholder="Şifrenizi tekrar girin"
+                                       autocomplete="new-password" />
+
+                                <button type="button"
+                                        class="password-toggle"
+                                        data-target="ConfirmPassword"
+                                        aria-label="Şifre tekrarını göster"
+                                        aria-pressed="false">
+                                    Göster
+                                </button>
+
+                            </div>
+
+                            <span asp-validation-for="ConfirmPassword"></span>
+
+                        </div>
+
+                    </div>
+
+                    <!-- BİLGİLENDİRME -->
+                    <p class="password-note">
+
+                        <svg width="16" height="16"
+                             viewBox="0 0 24 24"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="1.8"
+                             stroke-linecap="round"
+                             stroke-linejoin="round"
+                             aria-hidden="true">
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M12 11v5M12 8h.01" />
+                        </svg>
+
+                        Şifreniz, sistemin güvenlik gereksinimlerini
+                        karşılamalıdır.
+
+                    </p>
+
+                    <!-- KAYIT BUTONU -->
+                    <button type="submit"
+                            class="register-button">
+
+                        Hesap Oluştur
+                        <span aria-hidden="true">→</span>
+
+                    </button>
+
+                </form>
+
+                <!-- GİRİŞ BAĞLANTISI -->
+                <p class="login-text">
+                    Zaten bir hesabınız var mı?
+
+                    <a asp-controller="Account"
+                       asp-action="Login">
+                        Giriş Yap
+                    </a>
+                </p>
+
+                <!-- ALT BİLGİ -->
+                <div class="security-note">
+
+                    <svg width="15" height="15"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+                        <rect x="5" y="10"
+                              width="14" height="11" rx="2" />
+                        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                    </svg>
+
+                    Güvenli hesap oluşturma
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- ŞİFRE GÖSTER / GİZLE -->
+    <script>
+            document.querySelectorAll(".password-toggle")
+                .forEach(function(button) {
+
+                    button.addEventListener("click", function() {
+
+                        const targetId =
+                            button.getAttribute("data-target");
+
+                        const input =
+                            document.getElementById(targetId);
+
+                        if (!input) return;
+
+                        const isHidden =
+                            input.type === "password";
+
+                        input.type =
+                            isHidden ? "text" : "password";
+
+                        button.textContent =
+                            isHidden ? "Gizle" : "Göster";
+
+                        button.setAttribute(
+                            "aria-pressed",
+                            isHidden ? "true" : "false"
+                        );
+
+                        button.setAttribute(
+                            "aria-label",
+                            isHidden
+                                ? "Şifreyi gizle"
+                                : "Şifreyi göster"
+                        );
+                    });
+                });
+    </script>
+
 </body>
 </html>

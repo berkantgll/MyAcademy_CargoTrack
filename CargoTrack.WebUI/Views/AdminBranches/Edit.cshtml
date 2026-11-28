@@ -1,0 +1,287 @@
+﻿@model CargoTrack.DTO.BranchDtos.BranchDto
+
+@{
+    Layout = "_PanelLayout";
+    ViewData["Title"] = "Şube Düzenle";
+}
+
+<style>
+    .be-page {
+        max-width: 1050px;
+        margin: 0 auto;
+        color: #0b1c30;
+    }
+
+    .be-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+    }
+
+    .be-title {
+        font-size: 30px;
+        font-weight: 800;
+        color: #10243d;
+        margin: 0;
+    }
+
+    .be-subtitle {
+        color: #8292a6;
+        font-size: 13px;
+        margin-top: 9px;
+    }
+
+    .be-card {
+        border: 1px solid #e3eaf3;
+        border-radius: 16px;
+        background: #fff;
+        overflow: hidden;
+    }
+
+    .be-card-head {
+        padding: 23px 26px;
+        background: #10243d;
+        color: #fff;
+    }
+
+        .be-card-head h2 {
+            margin: 0;
+            font-size: 19px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+    .be-card-body {
+        padding: 26px;
+    }
+
+    .be-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+    }
+
+    .be-field {
+        margin-bottom: 19px;
+    }
+
+    .be-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 800;
+        margin-bottom: 9px;
+        color: #40546d;
+    }
+
+    .be-input {
+        display: block;
+        width: 100%;
+        min-height: 46px;
+        border: 1px solid #dfe7f0;
+        border-radius: 10px;
+        background: #fbfcff;
+        padding: 11px 13px;
+        font-size: 13px;
+        color: #10243d;
+    }
+
+        .be-input:focus {
+            outline: none;
+            border-color: #fd8b00;
+            box-shadow: 0 0 0 3px rgba(253,139,0,.12);
+        }
+
+    .be-switch {
+        padding: 19px;
+        background: #f5f8fc;
+        border-radius: 12px;
+        margin-bottom: 22px;
+    }
+
+        .be-switch label {
+            font-size: 13px;
+            color: #28415d;
+            font-weight: 800;
+            margin-left: 8px;
+        }
+
+    .be-help {
+        color: #8394a8;
+        font-size: 11px;
+        margin: 8px 0 0;
+    }
+
+    .be-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .be-save {
+        padding: 13px 21px;
+        border: none;
+        border-radius: 10px;
+        background: #fd8b00;
+        color: #10243d;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .be-back {
+        display: inline-block;
+        padding: 12px 20px;
+        border: 1px solid #dfe7f0;
+        border-radius: 10px;
+        color: #38516e;
+        background: white;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    @@media (max-width: 650px) {
+        .be-grid {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+
+        .be-card-body {
+            padding: 18px;
+        }
+    }
+</style>
+
+<div class="be-page">
+
+    <div class="be-top">
+        <div>
+            <h1 class="be-title">Şube Düzenle</h1>
+            <p class="be-subtitle">
+                Şube bilgilerini ve aktiflik durumunu yönetin.
+            </p>
+        </div>
+
+        <a asp-controller="AdminBranches"
+           asp-action="Index"
+           class="be-back">
+            Şube Yönetimine Dön
+        </a>
+    </div>
+
+    <section class="be-card">
+
+        <div class="be-card-head">
+            <h2>@Model.BranchName</h2>
+        </div>
+
+        <div class="be-card-body">
+
+            <form asp-controller="AdminBranches"
+                  asp-action="Edit"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <input asp-for="Id" type="hidden" />
+
+                <div asp-validation-summary="All"
+                     class="text-danger mb-3"></div>
+
+                <div class="be-grid">
+
+                    <div class="be-field">
+                        <label asp-for="BranchCode" class="be-label">
+                            Şube Kodu
+                        </label>
+
+                        <input asp-for="BranchCode"
+                               class="be-input"
+                               maxlength="30"
+                               required />
+
+                        <span asp-validation-for="BranchCode"
+                              class="text-danger"></span>
+                    </div>
+
+                    <div class="be-field">
+                        <label asp-for="BranchCity" class="be-label">
+                            Şehir
+                        </label>
+
+                        <input asp-for="BranchCity"
+                               class="be-input"
+                               maxlength="100"
+                               required />
+
+                        <span asp-validation-for="BranchCity"
+                              class="text-danger"></span>
+                    </div>
+
+                </div>
+
+                <div class="be-field">
+                    <label asp-for="BranchName" class="be-label">
+                        Şube Adı
+                    </label>
+
+                    <input asp-for="BranchName"
+                           class="be-input"
+                           maxlength="150"
+                           required />
+
+                    <span asp-validation-for="BranchName"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="be-field">
+                    <label asp-for="PhoneNumber" class="be-label">
+                        İletişim Telefonu
+                    </label>
+
+                    <input asp-for="PhoneNumber"
+                           type="tel"
+                           class="be-input"
+                           maxlength="40" />
+
+                    <span asp-validation-for="PhoneNumber"
+                          class="text-danger"></span>
+                </div>
+
+                <div class="be-switch">
+                    <input asp-for="IsActive"
+                           class="form-check-input" />
+
+                    <label asp-for="IsActive">
+                        Şube Aktif
+                    </label>
+
+                    <p class="be-help">
+                        Şubeyi pasife almak için işareti kaldırın.
+                        Açık kargosu, aktif personeli veya
+                        atanmış kullanıcısı olan şubeler
+                        pasife alınamaz.
+                    </p>
+                </div>
+
+                <div class="be-actions">
+                    <button type="submit" class="be-save">
+                        Değişiklikleri Kaydet
+                    </button>
+
+                    <a asp-controller="AdminBranches"
+                       asp-action="Index"
+                       class="be-back">
+                        Vazgeç
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+    </section>
+</div>
